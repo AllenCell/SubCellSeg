@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import os
 from pathlib import Path
 from typing import List, Optional, Sequence, Union
@@ -63,6 +64,9 @@ def open_image(path: PathLike):
     """Open an image with bioio. Returns a ``BioImage``."""
     from bioio import BioImage
 
+    # bioio tries each installed reader in turn and logs a warning for every one
+    # that does not fit, e.g. the OME reader on a plain TIFF. That is expected.
+    logging.getLogger("bioio.bio_image").setLevel(logging.ERROR)
     try:
         return BioImage(str(path) if is_url(path) else path)
     except Exception as err:

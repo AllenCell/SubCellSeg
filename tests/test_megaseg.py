@@ -157,12 +157,27 @@ def test_make_csv_train_and_predict(tmp_path, checkpoint):
     best = run / "checkpoints" / "best.ckpt"
     assert best.exists() and (run / "checkpoints" / "last.ckpt").exists()
     assert (run / "metrics.csv").exists()
-    assert any((tmp_path / "cache" / "train").iterdir())
+    assert any((tmp_path / "cache").iterdir())
 
     # The trained checkpoint feeds straight back into prediction.
     main(["predict", "-i", str(tmp_path / "raw"), "-o", str(tmp_path / "pred"),
           "-c", str(best), "--device", "cpu", "--patch-size", "16", "32", "32"])
     assert len(list((tmp_path / "pred").glob("*_seg.tif"))) == 4
+
+
+def test_validation_patches_are_repeatable(tmp_path):
+    from megaseg.data import fixed_patches
+
+    _write_dataset(tmp_path, n=2)
+    items = [{"raw": str(tmp_path / "raw" / f"im{i}.tif"),
+              "seg": str(tmp_path / "seg" / f"im{i}_seg.tif")} for i in range(2)]
+    first = fixed_patches(items, SMALL_PATCH, patches_per_image=3, seed=1)
+    again = fixed_patches(items, SMALL_PATCH, patches_per_image=3, seed=1)
+
+    assert len(first) == 6
+    assert all(p["raw"].shape == (1, *SMALL_PATCH) for p in first)
+    assert all(torch.equal(a["raw"], b["raw"]) for a, b in zip(first, again))
+    assert set(torch.unique(first[0]["seg"]).tolist()) <= {0.0, 1.0}  # 0/255 masks become 0/1
 
 
 def test_training_changes_weights_and_scratch_runs(tmp_path, checkpoint):

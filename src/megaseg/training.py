@@ -2,14 +2,19 @@
 
 from __future__ import annotations
 
+import logging
+import warnings
 from pathlib import Path
 from typing import Optional, Sequence, Union
 
-import pytorch_lightning as pl
-import torch
-from monai.losses import GeneralizedDiceFocalLoss
+# Importing Lightning logs a warning about an optional GPU compiler on Windows.
+logging.getLogger("torch.utils.flop_counter").setLevel(logging.ERROR)
 
-from megaseg.data import build_transforms, make_loader, read_manifest, split_items
+import pytorch_lightning as pl  # noqa: E402
+import torch  # noqa: E402
+from monai.losses import GeneralizedDiceFocalLoss  # noqa: E402
+
+from megaseg.data import build_transforms, fixed_patches, make_loader, read_manifest, split_items
 from megaseg.model import PATCH_SIZE, build_network, read_state_dict
 from megaseg.weights import resolve_checkpoint
 
@@ -56,6 +61,20 @@ class MegaSegModule(pl.LightningModule):
         )
         scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=self.hparams.lr_gamma)
         return [optimizer], [scheduler]
+
+
+def _quiet_lightning() -> None:
+    """Hide Lightning messages that mean nothing to someone training a model."""
+    for name in ("pytorch_lightning", "lightning_fabric"):
+        logging.getLogger(name).setLevel(logging.WARNING)
+    for message in (
+        ".*does not have many workers.*",
+        ".*LeafSpec.*",
+        # With mixed precision the first optimiser steps may be skipped while
+        # the gradient scale settles; PyTorch then reports this harmless order.
+        ".*lr_scheduler.step.*before.*optimizer.step.*",
+    ):
+        warnings.filterwarnings("ignore", message=message)
 
 
 def train(
@@ -127,6 +146,7 @@ def train(
     from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
     from pytorch_lightning.loggers import CSVLogger
 
+    _quiet_lightning()
     pl.seed_everything(seed, workers=True)
     output_dir = Path(output_dir)
 
@@ -137,20 +157,21 @@ def train(
         train_items, val_items = split_items(train_items, val_fraction, seed)
     print(f"Training on {len(train_items)} image(s), validating on {len(val_items)}.")
 
-    loader_kwargs = dict(batch_size=batch_size, num_workers=num_workers)
     train_loader = make_loader(
         train_items,
         build_transforms(patch_size, channel, augment=True, patches_per_image=patches_per_image),
+        batch_size=batch_size,
         shuffle=True,
-        cache_dir=Path(cache_dir) / "train" if cache_dir else None,
-        **loader_kwargs,
+        num_workers=num_workers,
+        cache_dir=cache_dir,
     )
+    # Validation patches are cut once and reused, so every epoch is scored on
+    # exactly the same data.
     val_loader = make_loader(
-        val_items,
-        build_transforms(patch_size, channel, augment=False),
+        fixed_patches(val_items, patch_size, channel, seed=seed),
+        transform=None,
+        batch_size=batch_size,
         shuffle=False,
-        cache_dir=Path(cache_dir) / "val" if cache_dir else None,
-        **loader_kwargs,
     )
 
     module = MegaSegModule(lr=lr, weight_decay=weight_decay, lr_gamma=lr_gamma)
@@ -162,6 +183,9 @@ def train(
         print("Training from scratch.")
 
     use_gpu = device in ("gpu", "cuda") or (device == "auto" and torch.cuda.is_available())
+    if use_gpu:
+        torch.set_float32_matmul_precision("high")
+    print(f"Training on the {'GPU' if use_gpu else 'CPU (slow; a GPU is strongly recommended)'}.")
     checkpoint = ModelCheckpoint(
         dirpath=output_dir / "checkpoints",
         filename="best",
@@ -179,10 +203,15 @@ def train(
         logger=CSVLogger(save_dir=str(output_dir), name="", version=""),
         default_root_dir=str(output_dir),
         log_every_n_steps=1,
+        enable_model_summary=False,
     )
     trainer.fit(module, train_loader, val_loader, ckpt_path=str(resume) if resume else None)
 
     best = Path(checkpoint.best_model_path)
-    print(f"Best checkpoint: {best}")
+    score = checkpoint.best_model_score
+    print(f"\nFinished after {trainer.current_epoch} epoch(s).")
+    if score is not None:
+        print(f"Best validation loss: {float(score):.4f}")
+    print(f"Best model: {best}")
     print(f"Use it with:  megaseg predict --input IMAGES --checkpoint \"{best}\"")
     return best

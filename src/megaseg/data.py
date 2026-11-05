@@ -144,15 +144,38 @@ def build_transforms(
     return Compose(steps)
 
 
-def make_loader(
+def fixed_patches(
     items: List[Item],
+    patch_size: Sequence[int],
+    channel: Union[int, str] = 0,
+    patches_per_image: int = 4,
+    seed: int = 0,
+) -> List[Dict[str, torch.Tensor]]:
+    """Cut the same patches from each image every time this is called.
+
+    Used for validation: scoring every epoch on identical patches makes the
+    validation loss comparable from one epoch to the next.
+    """
+    transform = build_transforms(
+        patch_size, channel, augment=False, patches_per_image=patches_per_image
+    )
+    transform.set_random_state(seed=seed)
+    patches: List[Dict[str, torch.Tensor]] = []
+    for item in items:
+        out = transform(item)
+        patches.extend(out if isinstance(out, list) else [out])
+    return patches
+
+
+def make_loader(
+    items: List,
     transform,
     batch_size: int,
     shuffle: bool,
     num_workers: int = 0,
     cache_dir: Optional[PathLike] = None,
 ):
-    """Data loader over a manifest.
+    """Data loader over manifest rows, or over patches that are already loaded.
 
     With ``cache_dir``, loaded and normalised images are stored on disk after
     their first use, which makes later epochs much faster.
