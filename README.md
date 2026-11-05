@@ -139,6 +139,5 @@ SubCellSeg: this package is standalone.
 
 ## License
 
-<!-- RELEASE TODO: add the license and a LICENSE file. -->
-
-To be added.
+SubCellSeg is free to use, change and share under the
+[BSD 3-Clause License](LICENSE).
