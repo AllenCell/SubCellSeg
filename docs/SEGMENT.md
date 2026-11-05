@@ -1,15 +1,15 @@
 # Segmenting your images
 
-This page assumes MegaSeg is [installed](INSTALL.md).
+This page assumes SubCellSeg is [installed](INSTALL.md).
 
 ## Try it on an example first
 
 This command segments a public example image from the Allen Institute for Cell
-Science, straight from the internet. It needs the `megaseg[zarr]` option from
+Science, straight from the internet. It needs the `subcellseg[zarr]` option from
 [Extra image formats](INSTALL.md#extra-image-formats).
 
 ```
-megaseg predict --input https://animatedcell-test-data.s3.us-west-2.amazonaws.com/variance/10932.zarr --channel "Labeled Structure" --output example_results
+subcellseg predict --input https://animatedcell-test-data.s3.us-west-2.amazonaws.com/variance/10932.zarr --channel "Labeled Structure" --output example_results
 ```
 
 <!-- RELEASE TODO: confirm this is the example image to advertise, or replace it with a hosted TIFF so the example needs no extra option. -->
@@ -22,12 +22,12 @@ Put the images you want to segment in one folder, for example `my_images`.
 Then run:
 
 ```
-megaseg predict --input my_images --output results
+subcellseg predict --input my_images --output results
 ```
 
 You can type the folder's full location instead, for example
 `--input "D:\Experiments\2024-05-01"`. Use quotes if the name contains spaces.
-A handy trick: type `megaseg predict --input ` and then drag the folder from
+A handy trick: type `subcellseg predict --input ` and then drag the folder from
 the file explorer into the terminal window.
 
 `--input` can also be a single image file.
@@ -37,7 +37,7 @@ the file explorer into the terminal window.
 For each image `name.tif` you get `results/name_seg.tif`:
 
 - the same size as your image, so it overlays exactly;
-- **255** where MegaSeg sees the structure, **0** everywhere else;
+- **255** where SubCellSeg sees the structure, **0** everywhere else;
 - the same pixel size as your image, if the image file recorded one.
 
 For a time-lapse you get one mask per timepoint: `name_T000_seg.tif`,
@@ -51,29 +51,29 @@ For a time-lapse you get one mask per timepoint: `name_T000_seg.tif`,
 
 ## Images with several channels
 
-MegaSeg segments one channel: the one with your fluorescently tagged
+SubCellSeg segments one channel: the one with your fluorescently tagged
 structure. By default it takes the first channel. To choose another, count
 channels starting from 0 (the first channel is 0, the second is 1):
 
 ```
-megaseg predict --input my_images --output results --channel 1
+subcellseg predict --input my_images --output results --channel 1
 ```
 
 If your files store channel names, you can use the name instead:
 
 ```
-megaseg predict --input my_images --output results --channel "EGFP"
+subcellseg predict --input my_images --output results --channel "EGFP"
 ```
 
 ## Getting good results
 
-- **Give MegaSeg 3D z-stacks.** It is a 3D model. A single 2D image runs, but
+- **Give SubCellSeg 3D z-stacks.** It is a 3D model. A single 2D image runs, but
   the result will be poor.
-- **Use whole fields of view rather than small crops.** MegaSeg adjusts to the
+- **Use whole fields of view rather than small crops.** SubCellSeg adjusts to the
   brightness of each image as a whole, so cutting an image into small tiles
   and segmenting each tile separately can give clearly worse results than
   segmenting the whole image.
-- **Images similar to the training data work best.** MegaSeg was trained on
+- **Images similar to the training data work best.** SubCellSeg was trained on
   3D spinning-disk confocal images taken with a 100x objective (voxels of
   about 0.108 x 0.108 x 0.29 micrometres). The further your images are from
   that, the more likely you will benefit from
@@ -83,7 +83,7 @@ megaseg predict --input my_images --output results --channel "EGFP"
   structure; by default, voxels above 0.5 are kept. Lower values keep more:
 
   ```
-  megaseg predict --input my_images --output results --threshold 0.3 --overwrite
+  subcellseg predict --input my_images --output results --threshold 0.3 --overwrite
   ```
 
   To see the scores themselves, add `--save-prob`. You then also get
@@ -98,7 +98,7 @@ megaseg predict --input my_images --output results --channel "EGFP"
 - **Use your own fine-tuned model** with `--checkpoint`:
 
   ```
-  megaseg predict --input my_images --output results --checkpoint my_model/checkpoints/best.ckpt
+  subcellseg predict --input my_images --output results --checkpoint my_model/checkpoints/best.ckpt
   ```
 
 - **Only the top level of the folder is searched.** Images in sub-folders are
@@ -108,12 +108,12 @@ megaseg predict --input my_images --output results --channel "EGFP"
 
 ## All options
 
-Run `megaseg predict --help` to see them. The ones you are most likely to use:
+Run `subcellseg predict --help` to see them. The ones you are most likely to use:
 
 | Option | Meaning | Default |
 |---|---|---|
 | `--input`, `-i` | Image, folder of images, or web address | required |
-| `--output`, `-o` | Folder for the results | `megaseg_output` |
+| `--output`, `-o` | Folder for the results | `subcellseg_output` |
 | `--channel` | Channel with the structure (number from 0, or name) | `0` |
 | `--threshold` | Score above which a voxel counts as structure | `0.5` |
 | `--save-prob` | Also save the score image | off |
@@ -128,7 +128,7 @@ Run `megaseg predict --help` to see them. The ones you are most likely to use:
 `--device cpu` (slow, but it works for any image size your computer's memory
 can hold).
 
-**It is very slow.** Run `megaseg info`. If the `gpu` line does not name your
+**It is very slow.** Run `subcellseg info`. If the `gpu` line does not name your
 graphics card, see [If something is not right](INSTALL.md#if-something-is-not-right).
 
 **"Could not open ...".** The file format needs an extra reader; see
@@ -145,12 +145,12 @@ images.
 
 ## How this relates to the paper
 
-`megaseg predict` blends overlapping windows with 50% overlap and Gaussian
+`subcellseg predict` blends overlapping windows with 50% overlap and Gaussian
 weighting, which gives smoother results at window borders. The benchmarks in
 the paper used 30% overlap and uniform weighting. To reproduce those settings:
 
 ```
-megaseg predict --input my_images --output results --overlap 0.3 --blend constant
+subcellseg predict --input my_images --output results --overlap 0.3 --blend constant
 ```
 
 <!-- RELEASE TODO: confirm these are the settings behind the paper's numbers. -->

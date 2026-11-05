@@ -1,6 +1,6 @@
-# Fine-tuning MegaSeg on your own images
+# Fine-tuning SubCellSeg on your own images
 
-Fine-tuning means showing MegaSeg examples from *your* experiment so that it
+Fine-tuning means showing SubCellSeg examples from *your* experiment so that it
 gets better at *your* images. You give it images together with the correct
 masks, and it adjusts itself. It starts from everything the pretrained model
 already knows, so it needs far fewer examples than training a model from
@@ -10,7 +10,7 @@ Fine-tune when the pretrained model gives masks that are not good enough: a
 structure it has not seen, a different microscope or magnification, or
 unusual sample preparation. Always [try the pretrained model first](SEGMENT.md).
 
-You need a computer with an NVIDIA graphics card. Check with `megaseg info`.
+You need a computer with an NVIDIA graphics card. Check with `subcellseg info`.
 
 The whole process is five steps:
 
@@ -32,9 +32,9 @@ Any value above 0 in the mask counts as "structure", so masks that use 1, 255
 or object labels all work.
 
 **Where do masks come from?** The quickest route is usually to correct
-MegaSeg's own output rather than drawing from scratch:
+SubCellSeg's own output rather than drawing from scratch:
 
-1. Run `megaseg predict` on your images.
+1. Run `subcellseg predict` on your images.
 2. Open each image with its mask in napari or Fiji and fix the mistakes.
 3. Save the corrected masks.
 
@@ -72,11 +72,11 @@ that is fine too; see the next step.
 
 ## Step 3. Make a list of them
 
-MegaSeg reads a list (a CSV file) saying which mask belongs to which image.
+SubCellSeg reads a list (a CSV file) saying which mask belongs to which image.
 This command writes it for you:
 
 ```
-megaseg make-csv --raw-dir my_data/raw --seg-dir my_data/seg --output my_data/train.csv
+subcellseg make-csv --raw-dir my_data/raw --seg-dir my_data/seg --output my_data/train.csv
 ```
 
 If the mask names have an ending such as `_seg`, add `--seg-suffix _seg`.
@@ -96,15 +96,15 @@ one row per example. You can also write this file yourself.
 ## Step 4. Fine-tune
 
 ```
-megaseg finetune --train-csv my_data/train.csv --output my_model
+subcellseg finetune --train-csv my_data/train.csv --output my_model
 ```
 
-MegaSeg sets a few of your examples aside for checking its progress (the
+SubCellSeg sets a few of your examples aside for checking its progress (the
 "validation" images) and learns from the rest. You will see lines like:
 
 ```
 Training on 11 image(s), validating on 1.
-Starting from weights in C:\Users\you\.cache\megaseg\megaseg_v1.pt
+Starting from weights in C:\Users\you\.cache\subcellseg\subcellseg_v1.pt
 Training on the GPU.
 Epoch 12: 100%|##########| 2/2 [00:01<00:00, 1.70it/s, val/loss=0.351, val/dice=0.693, train/loss=0.471]
 ```
@@ -112,7 +112,7 @@ Epoch 12: 100%|##########| 2/2 [00:01<00:00, 1.70it/s, val/loss=0.351, val/dice=
 One **epoch** is one pass through your training images. The numbers on the
 right tell you how it is going:
 
-- `val/dice` is the agreement between MegaSeg's mask and your mask on the
+- `val/dice` is the agreement between SubCellSeg's mask and your mask on the
   validation images, from 0 (no overlap) to 1 (identical). **You want this to
   go up.**
 - `val/loss` and `train/loss` are the error. You want these to go down.
@@ -144,10 +144,10 @@ my_model/
 
 ## Step 5. Use your new model
 
-Give `megaseg predict` your model with `--checkpoint`:
+Give `subcellseg predict` your model with `--checkpoint`:
 
 ```
-megaseg predict --input my_images --output results --checkpoint my_model/checkpoints/best.ckpt
+subcellseg predict --input my_images --output results --checkpoint my_model/checkpoints/best.ckpt
 ```
 
 **Judge the result on images the model has not seen**, that is, images that
@@ -160,10 +160,10 @@ to your folders, and repeat from Step 3.
 ## Making training faster
 
 Reading large images from disk is usually what takes the time, not the GPU.
-Add a cache folder and MegaSeg prepares each image once and reuses it:
+Add a cache folder and SubCellSeg prepares each image once and reuses it:
 
 ```
-megaseg finetune --train-csv my_data/train.csv --output my_model --cache-dir my_data/cache
+subcellseg finetune --train-csv my_data/train.csv --output my_model --cache-dir my_data/cache
 ```
 
 The cache can be large, several times the size of your image files. Delete
@@ -171,12 +171,12 @@ the folder when you are done.
 
 ## Options
 
-Run `megaseg finetune --help` to see all of them.
+Run `subcellseg finetune --help` to see all of them.
 
 | Option | Meaning | Default |
 |---|---|---|
 | `--train-csv` | The list from Step 3 | required |
-| `--output`, `-o` | Folder for the new model | `megaseg_run` |
+| `--output`, `-o` | Folder for the new model | `subcellseg_run` |
 | `--channel` | Channel with the structure, if images have several (number from 0, or name) | `0` |
 | `--epochs` | Stop after this many epochs at the latest | `700` |
 | `--patience` | Stop when there was no improvement for this many epochs | `100` |
@@ -210,7 +210,7 @@ runs out; it quietly switches to much slower memory instead. Stop with
 size as its image. The message names the files.
 
 **"... has no column 'raw'".** Your CSV uses different column names. Either
-rename the columns to `raw` and `seg`, or tell MegaSeg the names with
+rename the columns to `raw` and `seg`, or tell SubCellSeg the names with
 `--raw-col` and `--seg-col`.
 
 **"At least 2 image pairs are needed".** With a single example there is
@@ -223,18 +223,18 @@ its image correctly, and the structure must be the bright part. Also check
 **The run was interrupted.** Continue it:
 
 ```
-megaseg finetune --train-csv my_data/train.csv --output my_model --resume my_model/checkpoints/last.ckpt
+subcellseg finetune --train-csv my_data/train.csv --output my_model --resume my_model/checkpoints/last.ckpt
 ```
 
 ## Training from scratch
 
-`megaseg train` takes the same options as `megaseg finetune` but starts from
+`subcellseg train` takes the same options as `subcellseg finetune` but starts from
 an untrained model instead of the pretrained one. This needs much more data
 and time, and is only worth it if your images are very different from
 fluorescence microscopy of cells.
 
 ```
-megaseg train --train-csv my_data/train.csv --output my_model
+subcellseg train --train-csv my_data/train.csv --output my_model
 ```
 
 ## For the curious: what happens during training

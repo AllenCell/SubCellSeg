@@ -1,4 +1,4 @@
-from megaseg.cli import main
+from subcellseg.cli import main
 
 if __name__ == "__main__":
     main()

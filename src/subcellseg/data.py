@@ -11,7 +11,7 @@ import numpy as np
 import torch
 from monai.transforms import Transform
 
-from megaseg import io
+from subcellseg import io
 
 PathLike = Union[str, Path]
 Item = Dict[str, str]  # {"raw": path, "seg": path}

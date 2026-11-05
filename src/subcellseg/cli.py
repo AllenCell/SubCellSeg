@@ -1,4 +1,4 @@
-"""Command line interface: ``megaseg predict | train | finetune | make-csv | info``."""
+"""Command line interface: ``subcellseg predict | train | finetune | make-csv | info``."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import csv
 import sys
 from pathlib import Path
 
-from megaseg.model import PATCH_SIZE
+from subcellseg.model import PATCH_SIZE
 
 
 def _channel(value: str):
@@ -22,10 +22,10 @@ def _add_predict(sub) -> None:
     )
     p.add_argument("--input", "-i", required=True,
                    help="Image file, folder of images, or URL.")
-    p.add_argument("--output", "-o", default="megaseg_output",
+    p.add_argument("--output", "-o", default="subcellseg_output",
                    help="Output folder (default: %(default)s).")
     p.add_argument("--checkpoint", "-c",
-                   help="Weights to use. Default: the pretrained MegaSeg weights.")
+                   help="Weights to use. Default: the pretrained SubCellSeg weights.")
     p.add_argument("--channel", type=_channel, default=0,
                    help="Channel to segment: index or name (default: 0).")
     p.add_argument("--threshold", type=float, default=0.5,
@@ -48,7 +48,7 @@ def _add_predict(sub) -> None:
 
 
 def _run_predict(args) -> None:
-    from megaseg.inference import predict
+    from subcellseg.inference import predict
 
     predict(
         args.input, args.output,
@@ -66,11 +66,11 @@ def _add_train(sub, name: str, finetune: bool) -> None:
                    help="CSV with a raw image column and a segmentation column.")
     p.add_argument("--val-csv",
                    help="Validation CSV. Default: hold out part of --train-csv.")
-    p.add_argument("--output", "-o", default="megaseg_run",
+    p.add_argument("--output", "-o", default="subcellseg_run",
                    help="Folder for checkpoints and logs (default: %(default)s).")
     p.add_argument("--init", default="pretrained" if finetune else None,
                    help="Checkpoint to start from."
-                        + (" Default: the pretrained MegaSeg weights." if finetune else ""))
+                        + (" Default: the pretrained SubCellSeg weights." if finetune else ""))
     p.add_argument("--channel", type=_channel, default=0,
                    help="Channel of the raw images: index or name (default: 0).")
     p.add_argument("--raw-col", default="raw", help="Raw image column (default: raw).")
@@ -99,7 +99,7 @@ def _add_train(sub, name: str, finetune: bool) -> None:
 
 
 def _run_train(args) -> None:
-    from megaseg.training import train
+    from subcellseg.training import train
 
     train(
         args.train_csv, args.val_csv, args.output,
@@ -127,7 +127,7 @@ def _add_make_csv(sub) -> None:
 
 
 def _run_make_csv(args) -> None:
-    from megaseg import io
+    from subcellseg import io
 
     segs = {io.image_stem(p): p for p in io.find_images(args.seg_dir)}
     rows, unmatched = [], []
@@ -157,27 +157,27 @@ def _add_info(sub) -> None:
 def _run_info(args) -> None:
     import torch
 
-    import megaseg
-    from megaseg.weights import WEIGHTS_FILENAME, cache_dir
+    import subcellseg
+    from subcellseg.weights import WEIGHTS_FILENAME, cache_dir
 
     weights = cache_dir() / WEIGHTS_FILENAME
-    print(f"megaseg  {megaseg.__version__}")
-    print(f"python   {sys.version.split()[0]} ({sys.platform})")
-    print(f"torch    {torch.__version__}")
+    print(f"subcellseg  {subcellseg.__version__}")
+    print(f"python      {sys.version.split()[0]} ({sys.platform})")
+    print(f"torch       {torch.__version__}")
     if torch.cuda.is_available():
-        print(f"gpu      {torch.cuda.get_device_name(0)} (CUDA {torch.version.cuda})")
+        print(f"gpu         {torch.cuda.get_device_name(0)} (CUDA {torch.version.cuda})")
     elif torch.version.cuda is None:
-        print("gpu      not usable: this PyTorch build is CPU-only. If you have an "
+        print("gpu         not usable: this PyTorch build is CPU-only. If you have an "
               "NVIDIA GPU, reinstall PyTorch with CUDA (see the README).")
     else:
-        print("gpu      none detected; running on CPU")
-    print(f"weights  {weights} ({'present' if weights.exists() else 'not downloaded yet'})")
+        print("gpu         none detected; running on CPU")
+    print(f"weights     {weights} ({'present' if weights.exists() else 'not downloaded yet'})")
 
 
 def main(argv=None) -> None:
     parser = argparse.ArgumentParser(
-        prog="megaseg",
-        description="MegaSeg: 3D segmentation of fluorescently tagged cellular structures.",
+        prog="subcellseg",
+        description="SubCellSeg: 3D segmentation of fluorescently tagged cellular structures.",
     )
     sub = parser.add_subparsers(dest="command", required=True)
     _add_predict(sub)

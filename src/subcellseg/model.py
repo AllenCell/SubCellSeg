@@ -1,4 +1,4 @@
-"""The MegaSeg network and checkpoint loading."""
+"""The SubCellSeg network and checkpoint loading."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from typing import Union
 
 import torch
 
-# MegaSeg is a residual 3D DynUNet with a single input and a single output channel.
+# SubCellSeg is a residual 3D DynUNet with a single input and a single output channel.
 ARCHITECTURE = {
     "spatial_dims": 3,
     "in_channels": 1,
@@ -26,7 +26,7 @@ _PREFIX = "backbone."
 
 
 def build_network() -> torch.nn.Module:
-    """Return an untrained MegaSeg network. Output is logits, not probabilities."""
+    """Return an untrained SubCellSeg network. Output is logits, not probabilities."""
     from monai.networks.nets import DynUNet
 
     return DynUNet(**ARCHITECTURE)
@@ -35,14 +35,14 @@ def build_network() -> torch.nn.Module:
 def read_state_dict(checkpoint: Union[str, Path]) -> dict:
     """Read network weights from any supported checkpoint file.
 
-    Accepts the released weights file, a checkpoint written by ``megaseg train``,
+    Accepts the released weights file, a checkpoint written by ``subcellseg train``,
     and checkpoints from the original cyto-dl training runs. All three keep the
     network under the ``backbone.`` prefix; a bare network state dict also works.
     """
     # weights_only=True: checkpoints are loaded as data, never as pickled code.
     obj = torch.load(checkpoint, map_location="cpu", weights_only=True)
     if not isinstance(obj, dict):
-        raise ValueError(f"{checkpoint} is not a MegaSeg checkpoint.")
+        raise ValueError(f"{checkpoint} is not a SubCellSeg checkpoint.")
     state = obj.get("state_dict", obj)
     if any(key.startswith(_PREFIX) for key in state):
         state = {k[len(_PREFIX):]: v for k, v in state.items() if k.startswith(_PREFIX)}
@@ -56,7 +56,7 @@ def load_network(checkpoint: Union[str, Path]) -> torch.nn.Module:
         network.load_state_dict(read_state_dict(checkpoint), strict=True)
     except RuntimeError as err:
         raise ValueError(
-            f"{checkpoint} does not match the MegaSeg architecture. "
-            "Only MegaSeg DynUNet checkpoints can be loaded."
+            f"{checkpoint} does not match the SubCellSeg architecture. "
+            "Only SubCellSeg DynUNet checkpoints can be loaded."
         ) from err
     return network

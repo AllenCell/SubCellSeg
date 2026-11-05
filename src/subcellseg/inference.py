@@ -9,9 +9,9 @@ from typing import List, Optional, Sequence, Union
 import numpy as np
 import torch
 
-from megaseg import io
-from megaseg.model import PATCH_SIZE, load_network
-from megaseg.weights import resolve_checkpoint
+from subcellseg import io
+from subcellseg.model import PATCH_SIZE, load_network
+from subcellseg.weights import resolve_checkpoint
 
 PathLike = Union[str, Path]
 
@@ -30,18 +30,18 @@ def _resolve_device(device: str) -> torch.device:
     return torch.device(device)
 
 
-class MegaSeg:
-    """A loaded MegaSeg model.
+class SubCellSeg:
+    """A loaded SubCellSeg model.
 
-    >>> model = MegaSeg()                      # pretrained weights
+    >>> model = SubCellSeg()                      # pretrained weights
     >>> mask = model.segment(volume)           # volume: (Z, Y, X) numpy array
     >>> prob = model.predict_proba(volume)     # float32 in [0, 1]
 
     Parameters
     ----------
     checkpoint
-        Weights to load. Defaults to the pretrained MegaSeg weights, which are
-        downloaded on first use. A checkpoint written by ``megaseg train`` also
+        Weights to load. Defaults to the pretrained SubCellSeg weights, which are
+        downloaded on first use. A checkpoint written by ``subcellseg train`` also
         works.
     device
         "auto" (GPU if available), "cpu", "cuda", "cuda:1", ...
@@ -133,7 +133,7 @@ def to_mask(probability: np.ndarray, threshold: float = 0.5) -> np.ndarray:
 
 def predict(
     input_path: PathLike,
-    output_dir: PathLike = "megaseg_output",
+    output_dir: PathLike = "subcellseg_output",
     *,
     checkpoint: Optional[PathLike] = None,
     channel: Union[int, str] = 0,
@@ -157,7 +157,7 @@ def predict(
     output_dir
         Where results are written. Created if needed.
     checkpoint
-        Weights to use. Defaults to the pretrained MegaSeg weights.
+        Weights to use. Defaults to the pretrained SubCellSeg weights.
     channel
         Channel to segment, as an index or a channel name.
     threshold
@@ -170,7 +170,7 @@ def predict(
         Recompute results that already exist. By default they are skipped, so
         an interrupted batch can simply be run again.
     inference_kwargs
-        Passed to :meth:`MegaSeg.predict_proba` (patch_size, overlap, blend,
+        Passed to :meth:`SubCellSeg.predict_proba` (patch_size, overlap, blend,
         batch_size).
 
     Returns
@@ -181,8 +181,8 @@ def predict(
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    model = MegaSeg(checkpoint=checkpoint, device=device)
-    print(f"MegaSeg: {len(images)} image(s), device={model.device}", file=sys.stderr)
+    model = SubCellSeg(checkpoint=checkpoint, device=device)
+    print(f"SubCellSeg: {len(images)} image(s), device={model.device}", file=sys.stderr)
     if model.device.type == "cpu":
         print("  Running on CPU. This works but is slow for large volumes.", file=sys.stderr)
 
@@ -206,7 +206,7 @@ def predict(
             print(f"  {name}: shape {tuple(volume.shape)}", file=sys.stderr)
             if volume.shape[0] == 1:
                 print(
-                    "    Warning: this image has a single Z plane. MegaSeg is a "
+                    "    Warning: this image has a single Z plane. SubCellSeg is a "
                     "3D model and expects a z-stack.", file=sys.stderr,
                 )
             probability = model.predict_proba(volume, progress=progress, **inference_kwargs)

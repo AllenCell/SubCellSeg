@@ -15,8 +15,8 @@ uv.lock
 .ipynb_checkpoints/
 
 # Outputs and weights: never commit these
-megaseg_output/
-megaseg_run/
+subcellseg_output/
+subcellseg_run/
 *.ckpt
 *.pt
 *.part

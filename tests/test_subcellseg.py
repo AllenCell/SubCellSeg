@@ -8,9 +8,9 @@ import pytest
 import tifffile
 import torch
 
-from megaseg import MegaSeg, io, predict
-from megaseg.cli import main
-from megaseg.model import build_network, load_network, read_state_dict
+from subcellseg import SubCellSeg, io, predict
+from subcellseg.cli import main
+from subcellseg.model import build_network, load_network, read_state_dict
 
 SMALL_PATCH = (16, 32, 32)
 
@@ -27,7 +27,7 @@ def checkpoint(tmp_path_factory):
 
 @pytest.fixture(scope="session")
 def model(checkpoint):
-    return MegaSeg(checkpoint=checkpoint, device="cpu")
+    return SubCellSeg(checkpoint=checkpoint, device="cpu")
 
 
 def _volume(shape=(18, 40, 44), seed=0):
@@ -166,7 +166,7 @@ def test_make_csv_train_and_predict(tmp_path, checkpoint):
 
 
 def test_validation_patches_are_repeatable(tmp_path):
-    from megaseg.data import fixed_patches
+    from subcellseg.data import fixed_patches
 
     _write_dataset(tmp_path, n=2)
     items = [{"raw": str(tmp_path / "raw" / f"im{i}.tif"),
@@ -181,7 +181,7 @@ def test_validation_patches_are_repeatable(tmp_path):
 
 
 def test_training_changes_weights_and_scratch_runs(tmp_path, checkpoint):
-    from megaseg import train
+    from subcellseg import train
 
     _write_dataset(tmp_path, n=3)
     with open(tmp_path / "data.csv", "w", newline="") as f:
@@ -199,3 +199,34 @@ def test_training_changes_weights_and_scratch_runs(tmp_path, checkpoint):
     trained, initial = read_state_dict(best), read_state_dict(checkpoint)
     assert trained.keys() == initial.keys()
     assert any(not torch.equal(trained[k], initial[k]) for k in trained)
+
+
+def test_weights_download_is_verified_and_cached(tmp_path, monkeypatch):
+    from subcellseg import weights
+
+    source = tmp_path / "hosted.pt"
+    source.write_bytes(b"pretend weights")
+    cache = tmp_path / "cache"
+    monkeypatch.setenv("SUBCELLSEG_CACHE_DIR", str(cache))
+    monkeypatch.delenv("SUBCELLSEG_WEIGHTS_URL", raising=False)
+    monkeypatch.setattr(weights, "WEIGHTS_URL", source.as_uri())
+
+    # A file that does not match the published checksum is rejected and not kept.
+    monkeypatch.setattr(weights, "WEIGHTS_SHA256", "0" * 64)
+    with pytest.raises(RuntimeError, match="corrupt"):
+        weights.fetch_pretrained()
+    assert not list(cache.iterdir())
+
+    monkeypatch.setattr(weights, "WEIGHTS_SHA256", weights.sha256(source))
+    path = weights.fetch_pretrained()
+    assert path == cache / weights.WEIGHTS_FILENAME
+    assert path.read_bytes() == b"pretend weights"
+
+    # Second call uses the cached copy; an unreachable location is never contacted.
+    monkeypatch.setattr(weights, "WEIGHTS_URL", (tmp_path / "gone.pt").as_uri())
+    assert weights.fetch_pretrained() == path
+
+    # With nothing cached, an unreachable location gives a readable error.
+    path.unlink()
+    with pytest.raises(RuntimeError, match="Could not download"):
+        weights.fetch_pretrained()

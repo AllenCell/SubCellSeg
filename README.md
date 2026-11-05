@@ -1,6 +1,6 @@
-# MegaSeg
+# SubCellSeg
 
-MegaSeg finds fluorescently tagged structures in 3D microscopy images of cells.
+SubCellSeg finds fluorescently tagged structures in 3D microscopy images of cells.
 It is a single deep learning model that works across many different cellular
 structures, so there is nothing to choose or tune: give it a z-stack, get back
 a 3D mask of the structure.
@@ -14,7 +14,7 @@ You can use it in three ways:
 
 You do not need programming experience for the first two.
 
-<!-- RELEASE TODO: add a figure (raw image next to MegaSeg mask) and the paper reference here. -->
+<!-- RELEASE TODO: add a figure (raw image next to SubCellSeg mask) and the paper reference here. -->
 
 ## What you need
 
@@ -44,21 +44,19 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 Then close the window, open a new one, and on either system run:
 
 ```
-uv tool install --python 3.12 --torch-backend auto https://github.com/ORG/REPO/archive/refs/heads/main.zip
+uv tool install --python 3.12 --torch-backend auto https://github.com/AllenCell/SubCellSeg/archive/refs/heads/main.zip
 ```
-
-<!-- RELEASE TODO: replace ORG/REPO with the public repository, here and in docs/. -->
 
 Check that it worked:
 
 ```
-megaseg info
+subcellseg info
 ```
 
 ## 2. Segment your images
 
 ```
-megaseg predict --input my_images --output results
+subcellseg predict --input my_images --output results
 ```
 
 `my_images` can be one image or a folder of images. For every image, a mask
@@ -69,7 +67,7 @@ top of your original image.
 If your images have several channels, say which one holds the structure:
 
 ```
-megaseg predict --input my_images --output results --channel 1
+subcellseg predict --input my_images --output results --channel 1
 ```
 
 The first time you run this, the model (about 65 MB) is downloaded
@@ -83,9 +81,9 @@ If the pretrained model is not good enough for your images, teach it with
 examples: a folder of images and a folder of matching masks.
 
 ```
-megaseg make-csv --raw-dir my_data/raw --seg-dir my_data/seg --output my_data/train.csv
-megaseg finetune --train-csv my_data/train.csv --output my_model
-megaseg predict --input my_images --output results --checkpoint my_model/checkpoints/best.ckpt
+subcellseg make-csv --raw-dir my_data/raw --seg-dir my_data/seg --output my_data/train.csv
+subcellseg finetune --train-csv my_data/train.csv --output my_model
+subcellseg predict --input my_images --output results --checkpoint my_model/checkpoints/best.ckpt
 ```
 
 The full walkthrough is in **[docs/TRAINING.md](docs/TRAINING.md)**.
@@ -94,21 +92,21 @@ The full walkthrough is in **[docs/TRAINING.md](docs/TRAINING.md)**.
 
 ```python
 import tifffile
-from megaseg import MegaSeg
+from subcellseg import SubCellSeg
 
-model = MegaSeg()                         # loads the pretrained model
+model = SubCellSeg()                         # loads the pretrained model
 volume = tifffile.imread("cell.tif")      # a (Z, Y, X) array
 mask = model.segment(volume)              # uint8, 255 inside the structure
 probability = model.predict_proba(volume) # float32, 0 to 1
 ```
 
-`megaseg.predict(...)` and `megaseg.train(...)` do the same as the commands
+`subcellseg.predict(...)` and `subcellseg.train(...)` do the same as the commands
 above. There is a runnable example in
 [examples/quickstart.ipynb](examples/quickstart.ipynb).
 
 ## napari and Fiji
 
-MegaSeg is also available as a napari plugin and a Fiji plugin, for people who
+SubCellSeg is also available as a napari plugin and a Fiji plugin, for people who
 prefer to click rather than type.
 
 <!-- RELEASE TODO: link the napari plugin and the Fiji plugin. -->
@@ -121,10 +119,10 @@ Coming soon.
 
 ## Getting help
 
-Run `megaseg info` and include its output when you
-report a problem. It shows your versions and whether your GPU is being used.
-
-<!-- RELEASE TODO: link the issue tracker / forum tag. -->
+Ask questions and report problems on the
+[issue tracker](https://github.com/AllenCell/SubCellSeg/issues). Run
+`subcellseg info` and include its output: it shows your versions and whether
+your GPU is being used.
 
 ## Citation
 

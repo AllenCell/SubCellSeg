@@ -1,4 +1,4 @@
-# Installing MegaSeg
+# Installing SubCellSeg
 
 This takes about five minutes and you only do it once. No programming
 experience is needed: you will copy three commands into a terminal.
@@ -33,30 +33,30 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 Now **close the terminal and open a new one**. This is needed for the terminal
 to notice the new program.
 
-## Step 3. Install MegaSeg
+## Step 3. Install SubCellSeg
 
 ```
-uv tool install --python 3.12 --torch-backend auto https://github.com/ORG/REPO/archive/refs/heads/main.zip
+uv tool install --python 3.12 --torch-backend auto https://github.com/AllenCell/SubCellSeg/archive/refs/heads/main.zip
 ```
 
-This downloads MegaSeg and everything it needs (about 3 GB with GPU support),
+This downloads SubCellSeg and everything it needs (about 3 GB with GPU support),
 so it can take a few minutes. `--torch-backend auto` makes uv look at your
 graphics card and install the matching version of PyTorch.
 
 ## Step 4. Check that it works
 
 ```
-megaseg info
+subcellseg info
 ```
 
 You should see something like this:
 
 ```
-megaseg  0.1.0
-python   3.12.13 (win32)
-torch    2.14.1+cu130
-gpu      NVIDIA GeForce RTX 4090 (CUDA 13.0)
-weights  C:\Users\you\.cache\megaseg\megaseg_v1.pt (not downloaded yet)
+subcellseg  0.1.0
+python      3.12.13 (win32)
+torch       2.14.1+cu130
+gpu         NVIDIA GeForce RTX 4090 (CUDA 13.0)
+weights     C:\Users\you\.cache\subcellseg\subcellseg_v1.pt (not downloaded yet)
 ```
 
 The line to look at is `gpu`. If it names your graphics card, you are done.
@@ -64,7 +64,7 @@ Continue with [segmenting your images](SEGMENT.md).
 
 ## If something is not right
 
-**`megaseg` is not recognized / command not found.**
+**`subcellseg` is not recognized / command not found.**
 Close the terminal and open a new one. If that does not help, run
 `uv tool update-shell`, then open a new terminal again.
 
@@ -75,50 +75,61 @@ You did not open a new terminal after Step 2. Close it and open a new one.
 NVIDIA graphics card.**
 First update the graphics driver from
 [nvidia.com/drivers](https://www.nvidia.com/drivers), restart the computer, and
-then install MegaSeg again with the command from Step 3 with `--reinstall`
+then install SubCellSeg again with the command from Step 3 with `--reinstall`
 added:
 
 ```
-uv tool install --reinstall --python 3.12 --torch-backend auto https://github.com/ORG/REPO/archive/refs/heads/main.zip
+uv tool install --reinstall --python 3.12 --torch-backend auto https://github.com/AllenCell/SubCellSeg/archive/refs/heads/main.zip
 ```
 
 **The computer has no NVIDIA graphics card.**
-MegaSeg still works, on the processor. It is much slower: expect tens of
+SubCellSeg still works, on the processor. It is much slower: expect tens of
 minutes per image rather than seconds. Training without a GPU is not
 practical.
 
 **The download is blocked.**
 Some institutes block downloads from the terminal. Ask your IT department to
-allow `astral.sh`, `github.com`, `pypi.org` and `download.pytorch.org`.
+allow `astral.sh`, `github.com`, `githubusercontent.com`, `pypi.org` and
+`download.pytorch.org`.
+
+**The model cannot be downloaded.**
+SubCellSeg downloads its model (about 65 MB) the first time you segment an
+image. If that fails, download the file `subcellseg_v1.pt` in a web browser
+from the [releases page](https://github.com/AllenCell/SubCellSeg/releases/tag/weights-v1)
+and tell SubCellSeg where it is:
+
+```
+subcellseg predict --input my_images --output results --checkpoint Downloads/subcellseg_v1.pt
+```
 
 ## Extra image formats
 
-TIFF and OME-TIFF work out of the box. For other formats, install MegaSeg with
+TIFF and OME-TIFF work out of the box. For other formats, install SubCellSeg with
 the matching option. For example, for Zeiss CZI files:
 
 ```
-uv tool install --reinstall --python 3.12 --torch-backend auto "megaseg[czi] @ https://github.com/ORG/REPO/archive/refs/heads/main.zip"
+uv tool install --reinstall --python 3.12 --torch-backend auto "subcellseg[czi] @ https://github.com/AllenCell/SubCellSeg/archive/refs/heads/main.zip"
 ```
 
 | Format | Option |
 |---|---|
-| Zeiss `.czi` | `megaseg[czi]` |
-| Nikon `.nd2` | `megaseg[nd2]` |
-| OME-Zarr `.zarr` | `megaseg[zarr]` |
-| All of the above | `megaseg[all]` |
+| Zeiss `.czi` | `subcellseg[czi]` |
+| Nikon `.nd2` | `subcellseg[nd2]` |
+| OME-Zarr `.zarr` | `subcellseg[zarr]` |
+| All of the above | `subcellseg[all]` |
 
 ## Updating and removing
 
 To update to the newest version, run the install command from Step 3 again
 with `--reinstall` added.
 
-To remove MegaSeg:
+To remove SubCellSeg:
 
 ```
-uv tool uninstall megaseg
+uv tool uninstall subcellseg
 ```
 
-The downloaded model is kept in a folder called `.cache/megaseg` in your home
+The downloaded model is kept in a folder called `.cache/subcellseg` in your home
 folder. Delete that folder to remove it too.
 
 ## For developers
@@ -126,8 +137,8 @@ folder. Delete that folder to remove it too.
 To work on the code, install it in editable mode in its own environment:
 
 ```
-git clone https://github.com/ORG/REPO
-cd REPO
+git clone https://github.com/AllenCell/SubCellSeg
+cd SubCellSeg
 uv venv --python 3.12
 uv pip install --python .venv --torch-backend auto -e ".[dev]"
 ```
@@ -144,4 +155,4 @@ With pip or conda instead of uv, install PyTorch first by following
 you get the build that matches your GPU, and then run `pip install -e .`.
 On Windows this order matters: plain `pip install` gives a CPU-only PyTorch.
 
-MegaSeg needs Python 3.10 or newer.
+SubCellSeg needs Python 3.10 or newer.

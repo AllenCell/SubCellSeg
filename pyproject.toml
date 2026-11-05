@@ -3,9 +3,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "megaseg"
+name = "subcellseg"
 version = "0.1.0"
-description = "MegaSeg: one 3D segmentation model for many fluorescently tagged cellular structures"
+description = "SubCellSeg: one 3D segmentation model for many fluorescently tagged cellular structures"
 readme = "README.md"
 requires-python = ">=3.10"
 keywords = ["segmentation", "microscopy", "3D", "deep learning", "cell biology"]
@@ -36,11 +36,15 @@ all = ["bioio-czi", "bioio-ome-zarr", "bioio-nd2"]
 notebook = ["jupyterlab", "matplotlib"]
 dev = ["pytest>=8", "pytest-timeout"]
 
+[project.urls]
+Homepage = "https://github.com/AllenCell/SubCellSeg"
+Issues = "https://github.com/AllenCell/SubCellSeg/issues"
+
 [project.scripts]
-megaseg = "megaseg.cli:main"
+subcellseg = "subcellseg.cli:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/megaseg"]
+packages = ["src/subcellseg"]
 
 # Note on PyTorch: which build is right (CUDA version, or CPU-only) depends on
 # the machine, and on Windows the default from PyPI is CPU-only. The install

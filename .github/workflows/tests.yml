@@ -27,6 +27,6 @@ jobs:
           pip install torch --index-url https://download.pytorch.org/whl/cpu
           pip install -e ".[dev]"
       - name: Check the command line tool
-        run: megaseg info
+        run: subcellseg info
       - name: Run tests
         run: pytest -q

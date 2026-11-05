@@ -14,15 +14,15 @@ import pytorch_lightning as pl  # noqa: E402
 import torch  # noqa: E402
 from monai.losses import GeneralizedDiceFocalLoss  # noqa: E402
 
-from megaseg.data import build_transforms, fixed_patches, make_loader, read_manifest, split_items
-from megaseg.model import PATCH_SIZE, build_network, read_state_dict
-from megaseg.weights import resolve_checkpoint
+from subcellseg.data import build_transforms, fixed_patches, make_loader, read_manifest, split_items
+from subcellseg.model import PATCH_SIZE, build_network, read_state_dict
+from subcellseg.weights import resolve_checkpoint
 
 PathLike = Union[str, Path]
 
 
-class MegaSegModule(pl.LightningModule):
-    """MegaSeg network with its training loss and optimiser."""
+class SubCellSegModule(pl.LightningModule):
+    """SubCellSeg network with its training loss and optimiser."""
 
     def __init__(self, lr: float = 1e-4, weight_decay: float = 1e-4, lr_gamma: float = 0.995):
         super().__init__()
@@ -80,7 +80,7 @@ def _quiet_lightning() -> None:
 def train(
     train_csv: PathLike,
     val_csv: Optional[PathLike] = None,
-    output_dir: PathLike = "megaseg_run",
+    output_dir: PathLike = "subcellseg_run",
     *,
     init: Optional[PathLike] = None,
     channel: Union[int, str] = 0,
@@ -102,7 +102,7 @@ def train(
     seed: int = 12345,
     resume: Optional[PathLike] = None,
 ) -> Path:
-    """Train MegaSeg from scratch, or fine-tune it on a new dataset.
+    """Train SubCellSeg from scratch, or fine-tune it on a new dataset.
 
     Parameters
     ----------
@@ -116,7 +116,7 @@ def train(
         Where checkpoints and the training log are written.
     init
         Starting weights. ``None`` trains from scratch. ``"pretrained"`` starts
-        from the released MegaSeg weights (fine-tuning). A path starts from
+        from the released SubCellSeg weights (fine-tuning). A path starts from
         that checkpoint.
     channel
         Channel of the raw images to train on, as an index or a channel name.
@@ -141,7 +141,7 @@ def train(
 
     Returns
     -------
-    Path of the best checkpoint, usable as ``megaseg predict --checkpoint``.
+    Path of the best checkpoint, usable as ``subcellseg predict --checkpoint``.
     """
     from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
     from pytorch_lightning.loggers import CSVLogger
@@ -174,7 +174,7 @@ def train(
         shuffle=False,
     )
 
-    module = MegaSegModule(lr=lr, weight_decay=weight_decay, lr_gamma=lr_gamma)
+    module = SubCellSegModule(lr=lr, weight_decay=weight_decay, lr_gamma=lr_gamma)
     if init is not None and resume is None:
         source = resolve_checkpoint(None if str(init) == "pretrained" else init)
         module.backbone.load_state_dict(read_state_dict(source), strict=True)
@@ -213,5 +213,5 @@ def train(
     if score is not None:
         print(f"Best validation loss: {float(score):.4f}")
     print(f"Best model: {best}")
-    print(f"Use it with:  megaseg predict --input IMAGES --checkpoint \"{best}\"")
+    print(f"Use it with:  subcellseg predict --input IMAGES --checkpoint \"{best}\"")
     return best

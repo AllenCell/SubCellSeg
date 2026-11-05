@@ -1,4 +1,4 @@
-"""Download and cache the pretrained MegaSeg weights."""
+"""Download and cache the pretrained SubCellSeg weights."""
 
 from __future__ import annotations
 
@@ -9,18 +9,20 @@ import urllib.request
 from pathlib import Path
 from typing import Optional, Union
 
-WEIGHTS_FILENAME = "megaseg_v1.pt"
+WEIGHTS_FILENAME = "subcellseg_v1.pt"
 
-# Where the released weights are hosted. Override with MEGASEG_WEIGHTS_URL.
-# RELEASE TODO: set this to the public download location before release.
-WEIGHTS_URL = ""
+# Where the released weights are hosted: an asset of the "weights-v1" release
+# of the repository. Override with SUBCELLSEG_WEIGHTS_URL.
+WEIGHTS_URL = (
+    "https://github.com/AllenCell/SubCellSeg/releases/download/weights-v1/" + WEIGHTS_FILENAME
+)
 WEIGHTS_SHA256 = "858689a3c2fcdf84422c5b375011ad2d822bd8fc556e2ebe48b49603fef89300"
 
 
 def cache_dir() -> Path:
-    """Directory for downloaded weights. Override with MEGASEG_CACHE_DIR."""
-    override = os.environ.get("MEGASEG_CACHE_DIR")
-    return Path(override) if override else Path.home() / ".cache" / "megaseg"
+    """Directory for downloaded weights. Override with SUBCELLSEG_CACHE_DIR."""
+    override = os.environ.get("SUBCELLSEG_CACHE_DIR")
+    return Path(override) if override else Path.home() / ".cache" / "subcellseg"
 
 
 def sha256(path: Path) -> str:
@@ -47,7 +49,7 @@ def fetch_pretrained() -> Path:
     if path.exists():
         return path
 
-    url = os.environ.get("MEGASEG_WEIGHTS_URL") or WEIGHTS_URL
+    url = os.environ.get("SUBCELLSEG_WEIGHTS_URL") or WEIGHTS_URL
     if not url:
         raise RuntimeError(
             "No download location is configured for the pretrained weights.\n"
@@ -57,11 +59,18 @@ def fetch_pretrained() -> Path:
 
     path.parent.mkdir(parents=True, exist_ok=True)
     partial = path.with_name(path.name + ".part")
-    print(f"Downloading MegaSeg weights to {path}", file=sys.stderr)
+    print(f"Downloading SubCellSeg weights to {path}", file=sys.stderr)
     try:
-        urllib.request.urlretrieve(url, partial, reporthook=_report)
+        try:
+            urllib.request.urlretrieve(url, partial, reporthook=_report)
+        except OSError as err:  # no network, blocked download, missing file
+            raise RuntimeError(
+                f"Could not download the pretrained weights from {url} ({err}).\n"
+                f"Download that file in a web browser and save it as {path}, "
+                "or pass a weights file with --checkpoint."
+            ) from None
         sys.stderr.write("\n")
-        if WEIGHTS_SHA256 and not os.environ.get("MEGASEG_WEIGHTS_URL"):
+        if WEIGHTS_SHA256 and not os.environ.get("SUBCELLSEG_WEIGHTS_URL"):
             found = sha256(partial)
             if found != WEIGHTS_SHA256:
                 raise RuntimeError(
