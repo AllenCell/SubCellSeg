@@ -1,5 +1,8 @@
 # SubCellSeg
 
+<img width="2163" height="2570" alt="Fig1_combined_v14" src="https://github.com/user-attachments/assets/ec5a2fd7-5c90-46c8-a704-286436a2d351" />
+
+
 SubCellSeg finds fluorescently tagged structures in 3D microscopy images of cells.
 It is a single deep learning model that works across many different cellular
 structures, so there is nothing to choose or tune: give it a z-stack, get back
