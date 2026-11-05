@@ -42,19 +42,10 @@ megaseg = "megaseg.cli:main"
 [tool.hatch.build.targets.wheel]
 packages = ["src/megaseg"]
 
-# --- uv only -----------------------------------------------------------------
-# PyPI ships a CPU-only torch for Windows. With uv, pull the CUDA build on both
-# Linux and Windows so a GPU works out of the box. pip ignores this section;
-# see "Installation" in the README for the pip route.
-[tool.uv.sources]
-torch = [
-    { index = "pytorch-cuda", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
-]
-
-[[tool.uv.index]]
-name = "pytorch-cuda"
-url = "https://download.pytorch.org/whl/cu128"
-explicit = true
+# Note on PyTorch: which build is right (CUDA version, or CPU-only) depends on
+# the machine, and on Windows the default from PyPI is CPU-only. The install
+# instructions therefore use `uv ... --torch-backend auto`, which detects the
+# GPU and picks the matching build. See docs/INSTALL.md.
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

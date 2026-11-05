@@ -190,7 +190,18 @@ def main(argv=None) -> None:
     try:
         args.run(args)
     except (FileNotFoundError, ValueError, RuntimeError) as err:
-        sys.exit(f"Error: {err}")
+        sys.exit(f"Error: {_root_cause(err)}")
+
+
+def _root_cause(err: BaseException) -> BaseException:
+    """The original error behind ``err``.
+
+    Libraries wrap errors ("applying transform ...") in ways that hide the
+    message that actually explains the problem, such as which file is wrong.
+    """
+    while err.__cause__ is not None:
+        err = err.__cause__
+    return err
 
 
 if __name__ == "__main__":

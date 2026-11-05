@@ -73,8 +73,9 @@ def open_image(path: PathLike):
         extra = _EXTRAS.get(image_suffix(path) or "")
         if extra:
             raise RuntimeError(
-                f"Could not open {path}. Reading this format needs an extra "
-                f'reader. Install it with:  pip install "megaseg[{extra}]"'
+                f"Could not open {path}. Reading this format needs the optional "
+                f'"megaseg[{extra}]" reader, or the file is damaged. See "Extra '
+                'image formats" in docs/INSTALL.md for how to install it.'
             ) from err
         raise
 
