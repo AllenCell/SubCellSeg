@@ -196,4 +196,8 @@ def make_loader(
         shuffle=shuffle,
         num_workers=num_workers,
         persistent_workers=num_workers > 0,
+        # Start workers as fresh processes on every platform. Linux would fork
+        # them by default, and a forked worker inherits the image reader's
+        # thread pool without its threads, so its first read never returns.
+        multiprocessing_context="spawn" if num_workers > 0 else None,
     )

@@ -34,7 +34,7 @@ zarr = ["bioio-ome-zarr"]
 nd2 = ["bioio-nd2"]
 all = ["bioio-czi", "bioio-ome-zarr", "bioio-nd2"]
 notebook = ["jupyterlab", "matplotlib"]
-dev = ["pytest>=8"]
+dev = ["pytest>=8", "pytest-timeout"]
 
 [project.scripts]
 megaseg = "megaseg.cli:main"
@@ -58,4 +58,5 @@ explicit = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+timeout = 600  # a hung data worker should fail the run, not stall it
 filterwarnings = ["ignore::DeprecationWarning", "ignore::FutureWarning"]

@@ -190,9 +190,11 @@ def test_training_changes_weights_and_scratch_runs(tmp_path, checkpoint):
         for i in range(3):  # relative paths, custom column names
             writer.writerow([f"raw/im{i}.tif", f"seg/im{i}_seg.tif"])
 
+    # Worker processes on purpose: validation set-up reads images in the main
+    # process first, which used to deadlock forked workers on Linux.
     best = train(
         tmp_path / "data.csv", output_dir=tmp_path / "run", raw_col="image", seg_col="mask",
-        max_epochs=1, batch_size=2, patch_size=SMALL_PATCH, num_workers=0, device="cpu",
+        max_epochs=1, batch_size=2, patch_size=SMALL_PATCH, num_workers=2, device="cpu",
     )
     trained, initial = read_state_dict(best), read_state_dict(checkpoint)
     assert trained.keys() == initial.keys()
