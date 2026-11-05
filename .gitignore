@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+
+# Environments
+.venv/
+venv/
+uv.lock
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Outputs and weights: never commit these
+megaseg_output/
+megaseg_run/
+*.ckpt
+*.pt
+*.part
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
