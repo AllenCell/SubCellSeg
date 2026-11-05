@@ -133,6 +133,10 @@ your GPU is being used.
 
 To be added with the publication.
 
+The pretrained model was trained with
+[cyto-dl](https://github.com/AllenCell/cyto-dl). You do not need cyto-dl to use
+SubCellSeg: this package is standalone.
+
 ## License
 
 <!-- RELEASE TODO: add the license and a LICENSE file. -->
