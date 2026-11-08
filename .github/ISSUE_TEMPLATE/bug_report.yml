@@ -1,0 +1,27 @@
+name: Bug report
+description: Something crashes or gives an error.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What did you run, and what did you expect instead?
+    validations: {required: true}
+  - type: textarea
+    id: output
+    attributes:
+      label: Full error output
+      render: shell
+    validations: {required: true}
+  - type: textarea
+    id: info
+    attributes:
+      label: Output of `subcellseg info`
+      render: shell
+    validations: {required: true}
+  - type: input
+    id: image
+    attributes:
+      label: Image format and size
+      placeholder: "OME-TIFF, 3 channels, 60 x 1024 x 1024"

@@ -4,8 +4,21 @@ on:
   push:
     branches: [main]
   pull_request:
+  schedule:
+    - cron: "17 6 * * 1"   # Mondays: catches breakage from new dependency releases
+  workflow_dispatch:
 
 jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/ruff-action@v3
+        with:
+          version: "0.17.4"
+      - run: ruff format --check .
+
   test:
     name: ${{ matrix.os }} / Python ${{ matrix.python }}
     runs-on: ${{ matrix.os }}
@@ -30,3 +43,34 @@ jobs:
         run: subcellseg info
       - name: Run tests
         run: pytest -q
+
+  # Runs the quickstart notebook end to end on the CPU. It downloads the
+  # weights and a public image, so it only runs on the weekly schedule and on
+  # demand, not on every pull request.
+  notebook:
+    name: quickstart notebook
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: |
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -e ".[zarr,notebook]" nbconvert ipykernel
+      - name: Execute
+        run: jupyter nbconvert --to notebook --execute examples/quickstart.ipynb --output /tmp/out.ipynb
+
+  # Single check to require in branch protection.
+  ok:
+    name: all checks passed
+    if: always()
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "lint: ${{ needs.lint.result }}  test: ${{ needs.test.result }}"
+          test "${{ needs.lint.result }}" = success && test "${{ needs.test.result }}" = success

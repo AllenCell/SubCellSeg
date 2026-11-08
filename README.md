@@ -1,5 +1,8 @@
 # SubCellSeg
 
+[![tests](https://github.com/AllenCell/SubCellSeg/actions/workflows/tests.yml/badge.svg)](https://github.com/AllenCell/SubCellSeg/actions/workflows/tests.yml)
+[![License: BSD-3](https://img.shields.io/badge/license-BSD--3--Clause-blue.svg)](LICENSE)
+
 <img width="2163" height="2570" alt="Fig1_combined_v14" src="https://github.com/user-attachments/assets/ec5a2fd7-5c90-46c8-a704-286436a2d351" />
 
 
@@ -165,6 +168,8 @@ Ask questions and report problems on the
 [issue tracker](https://github.com/AllenCell/SubCellSeg/issues). Run
 `subcellseg info` and include its output: it shows your versions and whether
 your GPU is being used.
+
+Want to help? See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Citation
 
