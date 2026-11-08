@@ -125,7 +125,7 @@ def write_volume(
     import tifffile
 
     metadata = {"axes": "ZYX"}
-    for axis, size in zip("ZYX", voxel_size or ()):
+    for axis, size in zip("ZYX", voxel_size or (), strict=False):
         if size:
             metadata[f"PhysicalSize{axis}"] = float(size)
             metadata[f"PhysicalSize{axis}Unit"] = "µm"

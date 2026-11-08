@@ -15,9 +15,9 @@ import pytorch_lightning as pl  # noqa: E402
 import torch  # noqa: E402
 from monai.losses import GeneralizedDiceFocalLoss  # noqa: E402
 
-from subcellseg.data import build_transforms, fixed_patches, make_loader, read_manifest, split_items
-from subcellseg.model import PATCH_SIZE, build_network, read_state_dict
-from subcellseg.weights import resolve_checkpoint
+from subcellseg.data import build_transforms, fixed_patches, make_loader, read_manifest, split_items  # noqa: E402
+from subcellseg.model import PATCH_SIZE, build_network, read_state_dict  # noqa: E402
+from subcellseg.weights import resolve_checkpoint  # noqa: E402
 
 PathLike = Union[str, Path]
 

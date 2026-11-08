@@ -252,7 +252,7 @@ def test_validation_patches_are_repeatable(tmp_path):
 
     assert len(first) == 6
     assert all(p["raw"].shape == (1, *SMALL_PATCH) for p in first)
-    assert all(torch.equal(a["raw"], b["raw"]) for a, b in zip(first, again))
+    assert all(torch.equal(a["raw"], b["raw"]) for a, b in zip(first, again, strict=True))
     assert set(torch.unique(first[0]["seg"]).tolist()) <= {0.0, 1.0}  # 0/255 masks become 0/1
 
 

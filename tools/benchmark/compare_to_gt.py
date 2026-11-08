@@ -10,7 +10,7 @@ import numpy as np
 import tifffile
 
 logging.getLogger("bioio.bio_image").setLevel(logging.ERROR)
-from bioio import BioImage
+from bioio import BioImage  # noqa: E402  (quiet the logger before importing)
 
 ap = argparse.ArgumentParser()
 ap.add_argument("zarr")
@@ -31,7 +31,8 @@ dice = 2 * inter / (pred.sum() + gt.sum())
 iou = inter / np.logical_or(pred, gt).sum()
 print(f"shape {pred.shape}  pred fg {pred.mean() * 100:.2f}%  gt fg {gt.mean() * 100:.2f}%")
 print(
-    f"dice {dice:.4f}  iou {iou:.4f}  precision {inter / pred.sum():.4f}  recall {inter / gt.sum():.4f}"
+    f"dice {dice:.4f}  iou {iou:.4f}  "
+    f"precision {inter / pred.sum():.4f}  recall {inter / gt.sum():.4f}"
 )
 
 if a.png:
