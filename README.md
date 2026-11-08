@@ -97,10 +97,10 @@ The full walkthrough is in **[docs/TRAINING.md](docs/TRAINING.md)**.
 import tifffile
 from subcellseg import SubCellSeg
 
-model = SubCellSeg()                         # loads the pretrained model
-volume = tifffile.imread("cell.tif")      # a (Z, Y, X) array
-mask = model.segment(volume)              # uint8, 255 inside the structure
-probability = model.predict_proba(volume) # float32, 0 to 1
+model = SubCellSeg()  # loads the pretrained model
+volume = tifffile.imread("cell.tif")  # a (Z, Y, X) array
+mask = model.segment(volume)  # uint8, 255 inside the structure
+probability = model.predict_proba(volume)  # float32, 0 to 1
 ```
 
 `subcellseg.predict(...)` and `subcellseg.train(...)` do the same as the commands

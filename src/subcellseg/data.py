@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import csv
 import random
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Tuple, Union
+from typing import Union
 
 import numpy as np
 import torch
@@ -14,7 +15,7 @@ from monai.transforms import Transform
 from subcellseg import io
 
 PathLike = Union[str, Path]
-Item = Dict[str, str]  # {"raw": path, "seg": path}
+Item = dict[str, str]  # {"raw": path, "seg": path}
 
 
 def _resolve(value: str, base: Path) -> str:
@@ -25,7 +26,7 @@ def _resolve(value: str, base: Path) -> str:
     return str(path if path.is_absolute() else base / path)
 
 
-def read_manifest(csv_path: PathLike, raw_col: str = "raw", seg_col: str = "seg") -> List[Item]:
+def read_manifest(csv_path: PathLike, raw_col: str = "raw", seg_col: str = "seg") -> list[Item]:
     """Read a CSV listing image / segmentation pairs.
 
     The CSV needs one column with the path of each raw image and one with the
@@ -38,18 +39,14 @@ def read_manifest(csv_path: PathLike, raw_col: str = "raw", seg_col: str = "seg"
         raise ValueError(f"{csv_path} has no rows.")
     for col in (raw_col, seg_col):
         if col not in rows[0]:
-            raise ValueError(
-                f"{csv_path} has no column {col!r}. Columns found: {list(rows[0])}"
-            )
+            raise ValueError(f"{csv_path} has no column {col!r}. Columns found: {list(rows[0])}")
 
     base = csv_path.resolve().parent
     items = [
-        {"raw": _resolve(row[raw_col], base), "seg": _resolve(row[seg_col], base)}
-        for row in rows
+        {"raw": _resolve(row[raw_col], base), "seg": _resolve(row[seg_col], base)} for row in rows
     ]
     missing = [
-        p for item in items for p in item.values()
-        if not io.is_url(p) and not Path(p).exists()
+        p for item in items for p in item.values() if not io.is_url(p) and not Path(p).exists()
     ]
     if missing:
         shown = "\n  ".join(missing[:5])
@@ -60,13 +57,11 @@ def read_manifest(csv_path: PathLike, raw_col: str = "raw", seg_col: str = "seg"
 
 
 def split_items(
-    items: List[Item], val_fraction: float = 0.1, seed: int = 12345
-) -> Tuple[List[Item], List[Item]]:
+    items: list[Item], val_fraction: float = 0.1, seed: int = 12345
+) -> tuple[list[Item], list[Item]]:
     """Randomly hold out a validation set. At least one image goes to each side."""
     if len(items) < 2:
-        raise ValueError(
-            "At least 2 image pairs are needed to hold out a validation set."
-        )
+        raise ValueError("At least 2 image pairs are needed to hold out a validation set.")
     shuffled = items[:]
     random.Random(seed).shuffle(shuffled)
     n_val = min(len(items) - 1, max(1, round(len(items) * val_fraction)))
@@ -76,10 +71,10 @@ def split_items(
 class LoadPaird(Transform):
     """Load a raw image and its segmentation as (1, Z, Y, X) float tensors."""
 
-    def __init__(self, channel: Union[int, str] = 0):
+    def __init__(self, channel: int | str = 0):
         self.channel = channel
 
-    def __call__(self, item: Item) -> Dict[str, torch.Tensor]:
+    def __call__(self, item: Item) -> dict[str, torch.Tensor]:
         raw = io.read_volume(io.open_image(item["raw"]), self.channel)
         seg = io.read_volume(io.open_image(item["seg"]), 0)
         if raw.shape != seg.shape:
@@ -95,7 +90,7 @@ class LoadPaird(Transform):
 
 def build_transforms(
     patch_size: Sequence[int],
-    channel: Union[int, str] = 0,
+    channel: int | str = 0,
     augment: bool = True,
     patches_per_image: int = 1,
 ):
@@ -128,7 +123,9 @@ def build_transforms(
     if patches_per_image > 1:
         steps.append(
             RandSpatialCropSamplesd(
-                keys=keys, roi_size=patch_size, num_samples=patches_per_image,
+                keys=keys,
+                roi_size=patch_size,
+                num_samples=patches_per_image,
                 random_size=False,
             )
         )
@@ -145,12 +142,12 @@ def build_transforms(
 
 
 def fixed_patches(
-    items: List[Item],
+    items: list[Item],
     patch_size: Sequence[int],
-    channel: Union[int, str] = 0,
+    channel: int | str = 0,
     patches_per_image: int = 4,
     seed: int = 0,
-) -> List[Dict[str, torch.Tensor]]:
+) -> list[dict[str, torch.Tensor]]:
     """Cut the same patches from each image every time this is called.
 
     Used for validation: scoring every epoch on identical patches makes the
@@ -160,7 +157,7 @@ def fixed_patches(
         patch_size, channel, augment=False, patches_per_image=patches_per_image
     )
     transform.set_random_state(seed=seed)
-    patches: List[Dict[str, torch.Tensor]] = []
+    patches: list[dict[str, torch.Tensor]] = []
     for item in items:
         out = transform(item)
         patches.extend(out if isinstance(out, list) else [out])
@@ -168,12 +165,12 @@ def fixed_patches(
 
 
 def make_loader(
-    items: List,
+    items: list,
     transform,
     batch_size: int,
     shuffle: bool,
     num_workers: int = 0,
-    cache_dir: Optional[PathLike] = None,
+    cache_dir: PathLike | None = None,
 ):
     """Data loader over manifest rows, or over patches that are already loaded.
 

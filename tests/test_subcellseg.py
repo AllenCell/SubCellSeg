@@ -90,8 +90,13 @@ def test_predict_files(tmp_path, checkpoint):
     out = tmp_path / "out"
 
     written = predict(
-        tmp_path / "cell.tif", out, checkpoint=checkpoint, device="cpu",
-        save_probability=True, progress=False, patch_size=SMALL_PATCH,
+        tmp_path / "cell.tif",
+        out,
+        checkpoint=checkpoint,
+        device="cpu",
+        save_probability=True,
+        progress=False,
+        patch_size=SMALL_PATCH,
     )
     assert written == [out / "cell_seg.tif"]
     mask = tifffile.imread(out / "cell_seg.tif")
@@ -102,8 +107,14 @@ def test_predict_files(tmp_path, checkpoint):
 
     # A second run skips finished work; --overwrite redoes it.
     before = (out / "cell_seg.tif").stat().st_mtime_ns
-    predict(tmp_path / "cell.tif", out, checkpoint=checkpoint, device="cpu",
-            progress=False, patch_size=SMALL_PATCH)
+    predict(
+        tmp_path / "cell.tif",
+        out,
+        checkpoint=checkpoint,
+        device="cpu",
+        progress=False,
+        patch_size=SMALL_PATCH,
+    )
     assert (out / "cell_seg.tif").stat().st_mtime_ns == before
 
 
@@ -113,8 +124,13 @@ def test_channel_and_timelapse(tmp_path, checkpoint, model):
     out = tmp_path / "out"
 
     written = predict(
-        tmp_path / "movie.ome.tif", out, checkpoint=checkpoint, device="cpu",
-        channel=1, progress=False, patch_size=SMALL_PATCH,
+        tmp_path / "movie.ome.tif",
+        out,
+        checkpoint=checkpoint,
+        device="cpu",
+        channel=1,
+        progress=False,
+        patch_size=SMALL_PATCH,
     )
     assert [p.name for p in written] == ["movie_T000_seg.tif", "movie_T001_seg.tif"]
     for t, path in enumerate(written):
@@ -122,8 +138,15 @@ def test_channel_and_timelapse(tmp_path, checkpoint, model):
         assert np.array_equal(tifffile.imread(path), expected)
 
     with pytest.raises(ValueError, match="out of range"):
-        predict(tmp_path / "movie.ome.tif", out, checkpoint=checkpoint, device="cpu",
-                channel=5, overwrite=True, progress=False)
+        predict(
+            tmp_path / "movie.ome.tif",
+            out,
+            checkpoint=checkpoint,
+            device="cpu",
+            channel=5,
+            overwrite=True,
+            progress=False,
+        )
 
 
 def _write_dataset(folder, n=4):
@@ -143,16 +166,49 @@ def _write_dataset(folder, n=4):
 def test_make_csv_train_and_predict(tmp_path, checkpoint):
     _write_dataset(tmp_path)
     manifest = tmp_path / "train.csv"
-    main(["make-csv", "--raw-dir", str(tmp_path / "raw"), "--seg-dir", str(tmp_path / "seg"),
-          "--seg-suffix", "_seg", "-o", str(manifest)])
+    main(
+        [
+            "make-csv",
+            "--raw-dir",
+            str(tmp_path / "raw"),
+            "--seg-dir",
+            str(tmp_path / "seg"),
+            "--seg-suffix",
+            "_seg",
+            "-o",
+            str(manifest),
+        ]
+    )
     with open(manifest, newline="") as f:
         rows = list(csv.DictReader(f))
     assert len(rows) == 4 and set(rows[0]) == {"raw", "seg"}
 
     run = tmp_path / "run"
-    main(["finetune", "--train-csv", str(manifest), "-o", str(run), "--init", str(checkpoint),
-          "--epochs", "2", "--batch-size", "2", "--patch-size", "16", "32", "32",
-          "--num-workers", "0", "--device", "cpu", "--cache-dir", str(tmp_path / "cache")])
+    main(
+        [
+            "finetune",
+            "--train-csv",
+            str(manifest),
+            "-o",
+            str(run),
+            "--init",
+            str(checkpoint),
+            "--epochs",
+            "2",
+            "--batch-size",
+            "2",
+            "--patch-size",
+            "16",
+            "32",
+            "32",
+            "--num-workers",
+            "0",
+            "--device",
+            "cpu",
+            "--cache-dir",
+            str(tmp_path / "cache"),
+        ]
+    )
 
     best = run / "checkpoints" / "best.ckpt"
     assert best.exists() and (run / "checkpoints" / "last.ckpt").exists()
@@ -160,8 +216,23 @@ def test_make_csv_train_and_predict(tmp_path, checkpoint):
     assert any((tmp_path / "cache").iterdir())
 
     # The trained checkpoint feeds straight back into prediction.
-    main(["predict", "-i", str(tmp_path / "raw"), "-o", str(tmp_path / "pred"),
-          "-c", str(best), "--device", "cpu", "--patch-size", "16", "32", "32"])
+    main(
+        [
+            "predict",
+            "-i",
+            str(tmp_path / "raw"),
+            "-o",
+            str(tmp_path / "pred"),
+            "-c",
+            str(best),
+            "--device",
+            "cpu",
+            "--patch-size",
+            "16",
+            "32",
+            "32",
+        ]
+    )
     assert len(list((tmp_path / "pred").glob("*_seg.tif"))) == 4
 
 
@@ -169,8 +240,13 @@ def test_validation_patches_are_repeatable(tmp_path):
     from subcellseg.data import fixed_patches
 
     _write_dataset(tmp_path, n=2)
-    items = [{"raw": str(tmp_path / "raw" / f"im{i}.tif"),
-              "seg": str(tmp_path / "seg" / f"im{i}_seg.tif")} for i in range(2)]
+    items = [
+        {
+            "raw": str(tmp_path / "raw" / f"im{i}.tif"),
+            "seg": str(tmp_path / "seg" / f"im{i}_seg.tif"),
+        }
+        for i in range(2)
+    ]
     first = fixed_patches(items, SMALL_PATCH, patches_per_image=3, seed=1)
     again = fixed_patches(items, SMALL_PATCH, patches_per_image=3, seed=1)
 
@@ -193,8 +269,15 @@ def test_training_changes_weights_and_scratch_runs(tmp_path, checkpoint):
     # Worker processes on purpose: validation set-up reads images in the main
     # process first, which used to deadlock forked workers on Linux.
     best = train(
-        tmp_path / "data.csv", output_dir=tmp_path / "run", raw_col="image", seg_col="mask",
-        max_epochs=1, batch_size=2, patch_size=SMALL_PATCH, num_workers=2, device="cpu",
+        tmp_path / "data.csv",
+        output_dir=tmp_path / "run",
+        raw_col="image",
+        seg_col="mask",
+        max_epochs=1,
+        batch_size=2,
+        patch_size=SMALL_PATCH,
+        num_workers=2,
+        device="cpu",
     )
     trained, initial = read_state_dict(best), read_state_dict(checkpoint)
     assert trained.keys() == initial.keys()

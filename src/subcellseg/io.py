@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import logging
 import os
+from collections.abc import Sequence
 from pathlib import Path
-from typing import List, Optional, Sequence, Union
+from typing import Union
 
 import numpy as np
 
@@ -13,8 +14,14 @@ PathLike = Union[str, Path]
 
 # Longest first, so "x.ome.tiff" is matched as ".ome.tiff" and not ".tiff".
 IMAGE_SUFFIXES = (
-    ".ome.tiff", ".ome.tif", ".ome.zarr",
-    ".tiff", ".tif", ".czi", ".zarr", ".nd2",
+    ".ome.tiff",
+    ".ome.tif",
+    ".ome.zarr",
+    ".tiff",
+    ".tif",
+    ".czi",
+    ".zarr",
+    ".nd2",
 )
 
 # Formats that need an optional reader: suffix -> name of the pip extra.
@@ -25,7 +32,7 @@ def is_url(path: PathLike) -> bool:
     return str(path).startswith(("http://", "https://", "s3://", "gs://"))
 
 
-def image_suffix(path: PathLike) -> Optional[str]:
+def image_suffix(path: PathLike) -> str | None:
     """The supported image suffix of ``path``, or None if it is not an image."""
     name = str(path).rstrip("/\\").lower()
     return next((s for s in IMAGE_SUFFIXES if name.endswith(s)), None)
@@ -38,7 +45,7 @@ def image_stem(path: PathLike) -> str:
     return name[: -len(suffix)] if suffix else Path(name).stem
 
 
-def find_images(input_path: PathLike) -> List[PathLike]:
+def find_images(input_path: PathLike) -> list[PathLike]:
     """Resolve an input to a list of images.
 
     ``input_path`` may be a single image, a remote URL, or a directory. A
@@ -80,7 +87,7 @@ def open_image(path: PathLike):
         raise
 
 
-def resolve_channel(image, channel: Union[int, str]) -> int:
+def resolve_channel(image, channel: int | str) -> int:
     """Turn a channel index or channel name into a valid channel index."""
     names = [str(n) for n in image.channel_names]
     if isinstance(channel, str):
@@ -89,19 +96,18 @@ def resolve_channel(image, channel: Union[int, str]) -> int:
         return names.index(channel)
     if not 0 <= channel < image.dims.C:
         raise ValueError(
-            f"Channel {channel} is out of range: the image has {image.dims.C} "
-            f"channel(s): {names}"
+            f"Channel {channel} is out of range: the image has {image.dims.C} channel(s): {names}"
         )
     return channel
 
 
-def read_volume(image, channel: Union[int, str] = 0, timepoint: int = 0) -> np.ndarray:
+def read_volume(image, channel: int | str = 0, timepoint: int = 0) -> np.ndarray:
     """Read one channel and timepoint of an open image as a (Z, Y, X) array."""
     c = resolve_channel(image, channel)
     return image.get_image_dask_data("ZYX", C=c, T=timepoint).compute()
 
 
-def pixel_sizes(image) -> Optional[Sequence[Optional[float]]]:
+def pixel_sizes(image) -> Sequence[float | None] | None:
     """Physical (Z, Y, X) voxel size in microns, where the file records it."""
     try:
         size = image.physical_pixel_sizes
@@ -113,7 +119,7 @@ def pixel_sizes(image) -> Optional[Sequence[Optional[float]]]:
 def write_volume(
     path: PathLike,
     data: np.ndarray,
-    voxel_size: Optional[Sequence[Optional[float]]] = None,
+    voxel_size: Sequence[float | None] | None = None,
 ) -> None:
     """Write a (Z, Y, X) array as a compressed OME-TIFF."""
     import tifffile
@@ -131,8 +137,12 @@ def write_volume(
     partial = path.with_name(path.name + ".part")
     try:
         tifffile.imwrite(
-            partial, data, ome=True, compression="zlib",
-            photometric="minisblack", metadata=metadata,
+            partial,
+            data,
+            ome=True,
+            compression="zlib",
+            photometric="minisblack",
+            metadata=metadata,
         )
         os.replace(partial, path)
     finally:
