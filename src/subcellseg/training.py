@@ -6,7 +6,6 @@ import logging
 import warnings
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Union
 
 # Importing Lightning logs a warning about an optional GPU compiler on Windows.
 logging.getLogger("torch.utils.flop_counter").setLevel(logging.ERROR)
@@ -19,7 +18,7 @@ from subcellseg.data import build_transforms, fixed_patches, make_loader, read_m
 from subcellseg.model import PATCH_SIZE, build_network, read_state_dict  # noqa: E402
 from subcellseg.weights import resolve_checkpoint  # noqa: E402
 
-PathLike = Union[str, Path]
+PathLike = str | Path
 
 
 class SubCellSegModule(pl.LightningModule):

@@ -6,11 +6,10 @@ import logging
 import os
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Union
 
 import numpy as np
 
-PathLike = Union[str, Path]
+PathLike = str | Path
 
 # Longest first, so "x.ome.tiff" is matched as ".ome.tiff" and not ".tiff".
 IMAGE_SUFFIXES = (

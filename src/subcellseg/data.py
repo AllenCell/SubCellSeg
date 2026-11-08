@@ -6,7 +6,6 @@ import csv
 import random
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Union
 
 import numpy as np
 import torch
@@ -14,7 +13,7 @@ from monai.transforms import Transform
 
 from subcellseg import io
 
-PathLike = Union[str, Path]
+PathLike = str | Path
 Item = dict[str, str]  # {"raw": path, "seg": path}
 
 

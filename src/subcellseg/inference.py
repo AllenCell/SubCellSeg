@@ -5,7 +5,6 @@ from __future__ import annotations
 import sys
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Union
 
 import numpy as np
 import torch
@@ -14,7 +13,7 @@ from subcellseg import io
 from subcellseg.model import PATCH_SIZE, load_network
 from subcellseg.weights import resolve_checkpoint
 
-PathLike = Union[str, Path]
+PathLike = str | Path
 
 
 def _resolve_device(device: str) -> torch.device:
