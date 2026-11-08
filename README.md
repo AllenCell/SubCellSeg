@@ -120,6 +120,45 @@ prefer to click rather than type.
 
 Coming soon.
 
+## Benchmarks
+
+Measured on 2026-11-08 with a fresh `uv tool install --torch-backend auto`
+(torch 2.14.1+cu130, Python 3.12) on a Linux SLURM node: one NVIDIA A100-SXM4-80GB
+(driver 580.178.04) and 2 cores of an AMD EPYC 7713. Test images are the public
+`variance/<id>.zarr` files (channel `Labeled Structure`, 624 x 924 pixels per slice)
+from `https://animatedcell-test-data.s3.us-west-2.amazonaws.com/`.
+
+| Step | Time |
+|---|---|
+| Install with GPU support, empty uv cache (5.7 GB on disk, 529 MiB torch wheel) | 26 s |
+| `pytest` (10 tests, includes a short training run) on the GPU | 80 s |
+
+| Image | Z slices | GPU, `subcellseg predict` wall time | GPU peak memory | CPU (2 cores) wall time |
+|---|---|---|---|---|
+| 40 | 38 | 15.1 s first run, 9.3 s repeat | 2.0 GB | 957 s |
+| 6919 | 65 | 10.7 s | 2.5 GB | not run |
+| 11370 | 70 | 11.0 s | 2.5 GB | not run |
+
+Wall time is the whole command: starting Python and PyTorch, loading the model,
+reading the image over the network (1 to 5 s here) and writing the outputs.
+The sliding-window inference itself takes about 1.3 s for image 40 on the A100
+(63 windows at roughly 48 windows/s). The default `--batch-size 4` and
+`--patch-size 32 128 128` were used.
+
+The CPU and GPU masks for image 40 agree on 99.997 % of voxels. Against the
+classic `SEG_STRUCT` segmentation stored in the same files:
+
+| Image | Dice | IoU | Precision | Recall |
+|---|---|---|---|---|
+| 40 | 0.533 | 0.363 | 0.732 | 0.419 |
+| 6919 | 0.877 | 0.781 | 0.902 | 0.853 |
+| 11370 | 0.846 | 0.733 | 0.883 | 0.812 |
+
+To reproduce, run `tools/benchmark/bench_predict.sh cuda results 40 6919 11370`
+(it times `subcellseg predict`, records GPU memory, and runs
+`tools/benchmark/compare_to_gt.py`; the comparison needs `subcellseg[zarr]`
+and matplotlib). Add your own machine as a new row in the tables above.
+
 ## Getting help
 
 Ask questions and report problems on the
