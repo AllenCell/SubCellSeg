@@ -7,7 +7,6 @@ import os
 import sys
 import urllib.request
 from pathlib import Path
-from typing import Optional, Union
 
 WEIGHTS_FILENAME = "subcellseg_v1.pt"
 
@@ -84,7 +83,7 @@ def fetch_pretrained() -> Path:
     return path
 
 
-def resolve_checkpoint(checkpoint: Optional[Union[str, Path]] = None) -> Path:
+def resolve_checkpoint(checkpoint: str | Path | None = None) -> Path:
     """Return ``checkpoint`` if given, else the pretrained weights."""
     if checkpoint is None:
         return fetch_pretrained()

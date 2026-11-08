@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Usage question
+    url: https://github.com/AllenCell/SubCellSeg/discussions
+    about: Ask how to do something, or share what you made.

@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import sys
+from collections.abc import Sequence
 from pathlib import Path
-from typing import List, Optional, Sequence, Union
 
 import numpy as np
 import torch
@@ -13,7 +13,7 @@ from subcellseg import io
 from subcellseg.model import PATCH_SIZE, load_network
 from subcellseg.weights import resolve_checkpoint
 
-PathLike = Union[str, Path]
+PathLike = str | Path
 
 
 def _resolve_device(device: str) -> torch.device:
@@ -23,8 +23,9 @@ def _resolve_device(device: str) -> torch.device:
         device = "cuda"
     if device.startswith("cuda") and not torch.cuda.is_available():
         hint = (
-            " This PyTorch build has no CUDA support; reinstall PyTorch with CUDA "
-            "(see the README)." if torch.version.cuda is None else ""
+            " This PyTorch build has no CUDA support; reinstall PyTorch with CUDA (see the README)."
+            if torch.version.cuda is None
+            else ""
         )
         raise RuntimeError(f"A GPU was requested but CUDA is not available.{hint}")
     return torch.device(device)
@@ -47,7 +48,7 @@ class SubCellSeg:
         "auto" (GPU if available), "cpu", "cuda", "cuda:1", ...
     """
 
-    def __init__(self, checkpoint: Optional[PathLike] = None, device: str = "auto"):
+    def __init__(self, checkpoint: PathLike | None = None, device: str = "auto"):
         self.device = _resolve_device(device)
         self.network = load_network(resolve_checkpoint(checkpoint))
         self.network.to(self.device).eval()
@@ -135,15 +136,15 @@ def predict(
     input_path: PathLike,
     output_dir: PathLike = "subcellseg_output",
     *,
-    checkpoint: Optional[PathLike] = None,
-    channel: Union[int, str] = 0,
+    checkpoint: PathLike | None = None,
+    channel: int | str = 0,
     threshold: float = 0.5,
     save_probability: bool = False,
     device: str = "auto",
     overwrite: bool = False,
     progress: bool = True,
     **inference_kwargs,
-) -> List[Path]:
+) -> list[Path]:
     """Segment an image file, a directory of images, or a remote image.
 
     For each input ``name.ext`` this writes ``name_seg.tif`` (binary mask,
@@ -186,7 +187,7 @@ def predict(
     if model.device.type == "cpu":
         print("  Running on CPU. This works but is slow for large volumes.", file=sys.stderr)
 
-    written: List[Path] = []
+    written: list[Path] = []
     for path in images:
         image = io.open_image(path)
         stem = io.image_stem(path)
@@ -207,14 +208,13 @@ def predict(
             if volume.shape[0] == 1:
                 print(
                     "    Warning: this image has a single Z plane. SubCellSeg is a "
-                    "3D model and expects a z-stack.", file=sys.stderr,
+                    "3D model and expects a z-stack.",
+                    file=sys.stderr,
                 )
             probability = model.predict_proba(volume, progress=progress, **inference_kwargs)
             io.write_volume(mask_path, to_mask(probability, threshold), voxel_size)
             if save_probability:
-                io.write_volume(
-                    prob_path, np.round(probability * 255).astype(np.uint8), voxel_size
-                )
+                io.write_volume(prob_path, np.round(probability * 255).astype(np.uint8), voxel_size)
 
     print(f"Done. Results in {output_dir.resolve()}", file=sys.stderr)
     return written

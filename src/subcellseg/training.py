@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import logging
 import warnings
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional, Sequence, Union
 
 # Importing Lightning logs a warning about an optional GPU compiler on Windows.
 logging.getLogger("torch.utils.flop_counter").setLevel(logging.ERROR)
@@ -14,11 +14,11 @@ import pytorch_lightning as pl  # noqa: E402
 import torch  # noqa: E402
 from monai.losses import GeneralizedDiceFocalLoss  # noqa: E402
 
-from subcellseg.data import build_transforms, fixed_patches, make_loader, read_manifest, split_items
-from subcellseg.model import PATCH_SIZE, build_network, read_state_dict
-from subcellseg.weights import resolve_checkpoint
+from subcellseg.data import build_transforms, fixed_patches, make_loader, read_manifest, split_items  # noqa: E402
+from subcellseg.model import PATCH_SIZE, build_network, read_state_dict  # noqa: E402
+from subcellseg.weights import resolve_checkpoint  # noqa: E402
 
-PathLike = Union[str, Path]
+PathLike = str | Path
 
 
 class SubCellSegModule(pl.LightningModule):
@@ -36,8 +36,13 @@ class SubCellSegModule(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         loss = self.loss(self(batch["raw"]), batch["seg"])
         self.log(
-            "train/loss", loss, on_step=False, on_epoch=True, prog_bar=True,
-            batch_size=len(batch["raw"]), sync_dist=True,
+            "train/loss",
+            loss,
+            on_step=False,
+            on_epoch=True,
+            prog_bar=True,
+            batch_size=len(batch["raw"]),
+            sync_dist=True,
         )
         return loss
 
@@ -79,11 +84,11 @@ def _quiet_lightning() -> None:
 
 def train(
     train_csv: PathLike,
-    val_csv: Optional[PathLike] = None,
+    val_csv: PathLike | None = None,
     output_dir: PathLike = "subcellseg_run",
     *,
-    init: Optional[PathLike] = None,
-    channel: Union[int, str] = 0,
+    init: PathLike | None = None,
+    channel: int | str = 0,
     raw_col: str = "raw",
     seg_col: str = "seg",
     val_fraction: float = 0.1,
@@ -96,11 +101,11 @@ def train(
     weight_decay: float = 1e-4,
     lr_gamma: float = 0.995,
     num_workers: int = 4,
-    cache_dir: Optional[PathLike] = None,
+    cache_dir: PathLike | None = None,
     device: str = "auto",
     devices: int = 1,
     seed: int = 12345,
-    resume: Optional[PathLike] = None,
+    resume: PathLike | None = None,
 ) -> Path:
     """Train SubCellSeg from scratch, or fine-tune it on a new dataset.
 
@@ -213,5 +218,5 @@ def train(
     if score is not None:
         print(f"Best validation loss: {float(score):.4f}")
     print(f"Best model: {best}")
-    print(f"Use it with:  subcellseg predict --input IMAGES --checkpoint \"{best}\"")
+    print(f'Use it with:  subcellseg predict --input IMAGES --checkpoint "{best}"')
     return best

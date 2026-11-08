@@ -1,0 +1,38 @@
+name: Segmentation looks wrong
+description: The command runs, but the mask misses or over-segments the structure.
+labels: [segmentation-quality]
+body:
+  - type: input
+    id: structure
+    attributes:
+      label: Which structure is tagged, and with what?
+      placeholder: "Golgi, sialyltransferase-1 (ST6GAL1) tagged with mEGFP"
+    validations: {required: true}
+  - type: textarea
+    id: what
+    attributes:
+      label: What is wrong with the mask
+      description: Missed regions, extra regions, blobs merged, too thin, too thick?
+    validations: {required: true}
+  - type: textarea
+    id: pictures
+    attributes:
+      label: Screenshots
+      description: One z-slice of the raw image next to the mask. Drag images here.
+    validations: {required: true}
+  - type: input
+    id: sample
+    attributes:
+      label: Link to an example image (if you can share one)
+      description: A public URL or a small cropped stack lets us reproduce it.
+  - type: textarea
+    id: command
+    attributes:
+      label: Command you ran, and `subcellseg info`
+      render: shell
+    validations: {required: true}
+  - type: input
+    id: microscope
+    attributes:
+      label: Microscope and voxel size
+      placeholder: "Zeiss spinning disk, 100x, 0.108 x 0.108 x 0.29 um"

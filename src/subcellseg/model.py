@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Union
 
 import torch
 
@@ -32,7 +31,7 @@ def build_network() -> torch.nn.Module:
     return DynUNet(**ARCHITECTURE)
 
 
-def read_state_dict(checkpoint: Union[str, Path]) -> dict:
+def read_state_dict(checkpoint: str | Path) -> dict:
     """Read network weights from any supported checkpoint file.
 
     Accepts the released weights file, a checkpoint written by ``subcellseg train``,
@@ -45,11 +44,11 @@ def read_state_dict(checkpoint: Union[str, Path]) -> dict:
         raise ValueError(f"{checkpoint} is not a SubCellSeg checkpoint.")
     state = obj.get("state_dict", obj)
     if any(key.startswith(_PREFIX) for key in state):
-        state = {k[len(_PREFIX):]: v for k, v in state.items() if k.startswith(_PREFIX)}
+        state = {k[len(_PREFIX) :]: v for k, v in state.items() if k.startswith(_PREFIX)}
     return state
 
 
-def load_network(checkpoint: Union[str, Path]) -> torch.nn.Module:
+def load_network(checkpoint: str | Path) -> torch.nn.Module:
     """Build the network and load weights from ``checkpoint``."""
     network = build_network()
     try:

@@ -57,3 +57,11 @@ packages = ["src/subcellseg"]
 testpaths = ["tests"]
 timeout = 600  # a hung data worker should fail the run, not stall it
 filterwarnings = ["ignore::DeprecationWarning", "ignore::FutureWarning"]
+
+[tool.ruff]
+line-length = 100
+extend-exclude = ["examples"]
+
+[tool.ruff.lint]
+# E/W pycodestyle, F pyflakes, I isort, UP pyupgrade, B bugbear
+select = ["E", "W", "F", "I", "UP", "B"]
