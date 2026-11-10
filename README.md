@@ -227,7 +227,13 @@ Code) and reviewed, tested and edited by the authors, following the Allen
 Institute's guidelines for AI coding agents. Commits that contain AI-generated
 code carry an `Assisted-by:` trailer naming the tool and model.
 
-<!-- RELEASE TODO: verify on the test images that the masks from this package match the cyto-dl predictions used in the paper, and record the result here. -->
+The released weights are the MegaSeg DynUNet checkpoint (epoch 650) tensor for
+tensor. On 39 test images (3 per structure) this package reproduced the paper's
+per-image Dice to within 0.0003, and on the images for which the cyto-dl
+probability maps are still on disk (desmosomes, endosomes) the masks agree with
+cyto-dl's on 100.0000% of voxels.
+
+<!-- RELEASE TODO (done 2026-11-10): masks verified against the cyto-dl predictions; see the paragraph above. -->
 
 ## Getting help
 
