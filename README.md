@@ -205,18 +205,27 @@ in the issue first.
 Releases are tagged `vX.Y.Z` from `main` when there is a user-visible change
 (see [CHANGELOG.md](CHANGELOG.md)). Model weights have their own `weights-vN`
 tags and are never replaced in place. Still to come are the napari and Fiji
-plugins, the video tutorials, the items marked RELEASE TODO in the docs, and
-the paper's benchmark and figure code. Once the paper is published, development
-will slow down and this section will be updated; bug fixes and security
-updates will continue.
+plugins, the video tutorials and the items marked RELEASE TODO in the docs.
+Once the paper is published, development will slow down and this section will
+be updated; bug fixes and security updates will continue.
+
+## SubCellSeg and MegaSeg
+
+SubCellSeg was called MegaSeg while it was being developed, and the paper's
+work lives in the [MegaSeg repository](https://github.com/AllenCell/MegaSeg):
+the cyto-dl training configurations, the benchmark against the specialist
+models and the other tools, the fine-tuning and perturbation experiments, and
+the code that makes the figures. That repository will be made public with the
+journal submission; until then its contents are available from the authors on
+request. This repository is the released model and the tools to run and
+fine-tune it, and nothing here depends on MegaSeg or cyto-dl.
 
 ## How this code was developed
 
 The model, the training recipe and the experiments in the paper were developed
-from 2024 to 2026 with [cyto-dl](https://github.com/AllenCell/cyto-dl). That
-history is in the MegaSeg repository and is being imported here. This package
-re-implements inference and fine-tuning without cyto-dl so that it installs on
-its own. The pretrained weights are the paper's cyto-dl checkpoint (DynUNet,
+from 2024 to 2026 with [cyto-dl](https://github.com/AllenCell/cyto-dl), in the
+MegaSeg repository described above. This package re-implements inference and
+fine-tuning without cyto-dl so that it installs on its own. The pretrained weights are the paper's cyto-dl checkpoint (DynUNet,
 epoch 650), converted with `tools/export_weights.py`; every tensor is
 identical. On 39 test images, 3 per structure, the package reproduced the
 paper's per-image Dice to within 0.0003, and where cyto-dl's probability maps
