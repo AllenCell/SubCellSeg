@@ -144,18 +144,21 @@ from `https://animatedcell-test-data.s3.us-west-2.amazonaws.com/`.
 
 Wall time is the whole command: starting Python and PyTorch, loading the model,
 reading the image over the network (1 to 5 s here) and writing the outputs.
-The sliding-window inference itself takes about 1.3 s for image 40 on the A100
-(63 windows at roughly 48 windows/s). The default `--batch-size 4` and
-`--patch-size 32 128 128` were used.
+The sliding-window inference itself took about 1.3 s for image 40 on the A100.
+Timings were measured with the defaults of the time, 50% window overlap and
+Gaussian blending (252 windows for image 40, in batches of 4). The current
+defaults are the paper's settings, 30% overlap and constant blending, which
+run 140 windows for the same image and are a little faster.
 
 The CPU and GPU masks for image 40 agree on 99.997 % of voxels. Against the
-classic `SEG_STRUCT` segmentation stored in the same files:
+classic `SEG_STRUCT` segmentation stored in the same files, with the current
+defaults (measured 2026-11-10):
 
 | Image | Dice | IoU | Precision | Recall |
 |---|---|---|---|---|
-| 40 | 0.533 | 0.363 | 0.732 | 0.419 |
-| 6919 | 0.877 | 0.781 | 0.902 | 0.853 |
-| 11370 | 0.846 | 0.733 | 0.883 | 0.812 |
+| 40 | 0.532 | 0.362 | 0.733 | 0.417 |
+| 6919 | 0.874 | 0.777 | 0.904 | 0.847 |
+| 11370 | 0.845 | 0.732 | 0.888 | 0.806 |
 
 To reproduce, run `tools/benchmark/bench_predict.sh cuda results 40 6919 11370`
 (it times `subcellseg predict`, records GPU memory, and runs

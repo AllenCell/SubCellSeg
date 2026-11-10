@@ -115,12 +115,14 @@ Run `subcellseg predict --help` to see them. The ones you are most likely to use
 | `--input`, `-i` | Image, folder of images, or web address | required |
 | `--output`, `-o` | Folder for the results | `subcellseg_output` |
 | `--channel` | Channel with the structure (number from 0, or name) | `0` |
-| `--threshold` | Score above which a voxel counts as structure | `0.5` |
+| `--threshold` | Score at or above which a voxel counts as structure | `0.5` |
 | `--save-prob` | Also save the score image | off |
 | `--checkpoint`, `-c` | Use your own model | pretrained model |
 | `--overwrite` | Redo images that are already done | off |
 | `--device` | `auto`, `cpu` or `cuda` | `auto` |
 | `--batch-size` | Lower it if the GPU runs out of memory | `4` |
+| `--overlap` | How much neighbouring windows overlap | `0.3` |
+| `--blend` | How overlapping windows are combined: `constant` or `gaussian` | `constant` |
 
 ## Problems
 
@@ -145,12 +147,16 @@ images.
 
 ## How this relates to the paper
 
-`subcellseg predict` blends overlapping windows with 50% overlap and Gaussian
-weighting, which gives smoother results at window borders. The benchmarks in
-the paper used 30% overlap and uniform weighting. To reproduce those settings:
+The defaults of `subcellseg predict` are the settings behind the numbers in
+the paper: windows of 32 x 128 x 128 voxels, 30% overlap between neighbouring
+windows, a uniform (`constant`) average where windows overlap, and a threshold
+of 0.5 on the probability map (128 in the saved `_prob.tif`).
+
+Gaussian blending gives smoother transitions at window borders. It is not what
+the paper used, and the masks differ slightly:
 
 ```
-subcellseg predict --input my_images --output results --overlap 0.3 --blend constant
+subcellseg predict --input my_images --output results --overlap 0.5 --blend gaussian
 ```
 
-<!-- RELEASE TODO: confirm these are the settings behind the paper's numbers. -->
+<!-- RELEASE TODO (done 2026-11-10): confirmed against the cyto-dl configs used for the paper: overlap 0.3, MONAI's default constant blending, threshold 0.5. -->

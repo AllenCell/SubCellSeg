@@ -91,13 +91,13 @@ def train(
     channel: int | str = 0,
     raw_col: str = "raw",
     seg_col: str = "seg",
-    val_fraction: float = 0.1,
+    val_fraction: float = 0.2,
     patch_size: Sequence[int] = PATCH_SIZE,
-    batch_size: int = 8,
+    batch_size: int = 32,
     patches_per_image: int = 1,
-    max_epochs: int = 700,
-    patience: int = 100,
-    lr: float = 1e-4,
+    max_epochs: int = 1000,
+    patience: int | None = None,
+    lr: float | None = None,
     weight_decay: float = 1e-4,
     lr_gamma: float = 0.995,
     num_workers: int = 4,
@@ -133,7 +133,13 @@ def train(
         Random patches drawn from each image per epoch.
     max_epochs, patience
         Train for at most ``max_epochs``; stop early once the validation loss
-        has not improved for ``patience`` epochs.
+        has not improved for ``patience`` epochs. ``patience`` defaults to 50
+        when fine-tuning and 100 when training from scratch.
+    lr
+        Learning rate. Defaults to 5e-5 when fine-tuning and 1e-4 when
+        training from scratch.
+
+    The defaults are the settings used for the models in the paper.
     cache_dir
         Directory for an on-disk cache of preprocessed images. Speeds up
         training considerably when images are large.
@@ -154,6 +160,11 @@ def train(
     _quiet_lightning()
     pl.seed_everything(seed, workers=True)
     output_dir = Path(output_dir)
+    finetuning = init is not None
+    if lr is None:
+        lr = 5e-5 if finetuning else 1e-4
+    if patience is None:
+        patience = 50 if finetuning else 100
 
     train_items = read_manifest(train_csv, raw_col, seg_col)
     if val_csv is not None:
@@ -186,6 +197,7 @@ def train(
         print(f"Starting from weights in {source}")
     elif resume is None:
         print("Training from scratch.")
+    print(f"Learning rate {lr:g}; stopping after {patience} epochs without improvement.")
 
     use_gpu = device in ("gpu", "cuda") or (device == "auto" and torch.cuda.is_available())
     if use_gpu:

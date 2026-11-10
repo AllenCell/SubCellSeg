@@ -71,10 +71,30 @@ def test_predict_proba(model):
 
     mask = model.segment(volume, patch_size=SMALL_PATCH)
     assert mask.dtype == np.uint8
-    assert np.array_equal(mask > 0, prob > 0.5)
+    assert np.array_equal(mask > 0, prob >= 0.5)
 
     with pytest.raises(ValueError):
         model.predict_proba(volume[0])
+
+
+def test_defaults_match_paper():
+    """The package defaults are the inference and training settings of the paper."""
+    import inspect
+
+    from subcellseg.training import train
+
+    infer = inspect.signature(SubCellSeg.predict_proba).parameters
+    assert infer["patch_size"].default == (32, 128, 128)
+    assert infer["overlap"].default == 0.3
+    assert infer["blend"].default == "constant"
+    assert inspect.signature(SubCellSeg.segment).parameters["threshold"].default == 0.5
+
+    fit = inspect.signature(train).parameters
+    assert fit["batch_size"].default == 32
+    assert fit["max_epochs"].default == 1000
+    assert fit["val_fraction"].default == 0.2
+    # Learning rate and patience depend on whether we fine-tune; resolved inside train().
+    assert fit["lr"].default is None and fit["patience"].default is None
 
 
 def test_predict_ignores_intensity_scale(model):

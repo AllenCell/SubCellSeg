@@ -103,7 +103,7 @@ SubCellSeg sets a few of your examples aside for checking its progress (the
 "validation" images) and learns from the rest. You will see lines like:
 
 ```
-Training on 11 image(s), validating on 1.
+Training on 10 image(s), validating on 2.
 Starting from weights in C:\Users\you\.cache\subcellseg\subcellseg_v1.pt
 Training on the GPU.
 Epoch 12: 100%|##########| 2/2 [00:01<00:00, 1.70it/s, val/loss=0.351, val/dice=0.693, train/loss=0.471]
@@ -121,7 +121,7 @@ The numbers jump around from one epoch to the next, especially with few
 images. Look at the trend, not at single values.
 
 Training stops by itself when the validation images have stopped improving
-for 100 epochs, or after 700 epochs. You can also stop it at any time with
+for 50 epochs (100 when training from scratch), or after 1000 epochs. You can also stop it at any time with
 `Ctrl+C`; the best model so far is already saved.
 
 When it finishes it tells you where the model is:
@@ -178,9 +178,10 @@ Run `subcellseg finetune --help` to see all of them.
 | `--train-csv` | The list from Step 3 | required |
 | `--output`, `-o` | Folder for the new model | `subcellseg_run` |
 | `--channel` | Channel with the structure, if images have several (number from 0, or name) | `0` |
-| `--epochs` | Stop after this many epochs at the latest | `700` |
-| `--patience` | Stop when there was no improvement for this many epochs | `100` |
-| `--batch-size` | Lower it if the GPU runs out of memory | `8` |
+| `--epochs` | Stop after this many epochs at the latest | `1000` |
+| `--patience` | Stop when there was no improvement for this many epochs | `50` (fine-tune), `100` (from scratch) |
+| `--batch-size` | Lower it if the GPU runs out of memory | `32` |
+| `--lr` | Learning rate | `5e-5` (fine-tune), `1e-4` (from scratch) |
 | `--val-csv` | Your own list of validation images, instead of an automatic choice | automatic |
 | `--cache-dir` | Folder for prepared images, for speed | off |
 | `--resume` | Continue an interrupted run from `last.ckpt` | off |
@@ -191,18 +192,20 @@ Run `subcellseg finetune --help` to see all of them.
 |---|---|
 | 2 | about 1.5 GB |
 | 4 | about 3 GB |
-| 8 (default) | about 5 GB |
+| 8 | about 5 GB |
 | 16 | about 10 GB |
+| 32 (default) | about 20 GB |
 
-A larger batch size makes each step more reliable but is not required for
-good results. The models in the paper were trained with a batch size of 32.
+The default is the batch size the models in the paper were trained with. A
+smaller batch size also gives good results and is the first thing to lower
+when the GPU runs out of memory.
 
 ## Problems
 
 **Training is extremely slow on Windows.** The batch size is probably too big
 for your graphics card. Windows does not stop with an error when GPU memory
 runs out; it quietly switches to much slower memory instead. Stop with
-`Ctrl+C` and run again with a smaller `--batch-size`, for example 4 or 2.
+`Ctrl+C` and run again with a smaller `--batch-size`, for example 8 or 4.
 
 **"CUDA out of memory".** Use a smaller `--batch-size`.
 
@@ -243,12 +246,13 @@ subcellseg train --train-csv my_data/train.csv --output my_model
 - Every epoch, one random 3D patch of 32 x 128 x 128 voxels (Z, Y, X) is cut
   from each training image, with mild random brightness and contrast changes.
 - The network is a 3D residual U-Net (MONAI `DynUNet`), trained with the
-  Generalized Dice + Focal loss, the Adam optimiser (learning rate 0.0001,
-  weight decay 0.0001) and a learning rate that decays by 0.5% per epoch.
+  Generalized Dice + Focal loss, the Adam optimiser (learning rate 0.00005
+  when fine-tuning, 0.0001 from scratch; weight decay 0.0001) and a learning
+  rate that decays by 0.5% per epoch.
 - Validation uses four fixed patches per validation image, the same ones
   every epoch, so that the numbers are comparable between epochs.
 
-These are the settings used for the models in the paper, except for the fixed
-validation patches and the default batch size.
+These are the settings used for the models in the paper, with one difference:
+the paper's runs cut a fresh random validation patch every epoch.
 
-<!-- RELEASE TODO: confirm the statement above against the paper's methods section. -->
+<!-- RELEASE TODO (done 2026-11-10): checked against the paper's Methods (Hyperparameters, Fine-tuning protocol) and the cyto-dl configs. -->

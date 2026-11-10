@@ -56,7 +56,7 @@ def read_manifest(csv_path: PathLike, raw_col: str = "raw", seg_col: str = "seg"
 
 
 def split_items(
-    items: list[Item], val_fraction: float = 0.1, seed: int = 12345
+    items: list[Item], val_fraction: float = 0.2, seed: int = 12345
 ) -> tuple[list[Item], list[Item]]:
     """Randomly hold out a validation set. At least one image goes to each side."""
     if len(items) < 2:
