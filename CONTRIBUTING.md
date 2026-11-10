@@ -66,6 +66,15 @@ own tag series (`weights-v1`, `weights-v2`, ...). A weights asset is never
 replaced in place: new weights get a new tag and a package release that pins
 the new SHA256.
 
+## AI-assisted contributions
+
+Contributions written with AI tools are welcome under the Allen Institute's
+rules for coding agents: you are responsible for every line, you have read and
+understood it, and you say so. Add a trailer to the commit naming the tool and
+model, for example `Assisted-by: claude-code (claude-fable-5-1)`, and mention
+it in the pull request. Do not open pull requests with unreviewed AI-generated
+code or descriptions.
+
 ## Code of conduct
 
 This project follows the [Contributor Covenant](CODE_OF_CONDUCT.md). Be kind.

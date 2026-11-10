@@ -13,3 +13,4 @@ the before/after table from tools/benchmark/bench_predict.sh. -->
 - [ ] Docs updated if behaviour or commands changed
 - [ ] `CHANGELOG.md` has an entry under *Unreleased* (if a user would notice)
 - [ ] No weights, outputs or notebook outputs committed
+- [ ] AI-assisted code is reviewed line by line and the commit carries an `Assisted-by:` trailer
