@@ -6,26 +6,21 @@
 <img width="2163" height="2570" alt="Fig1_combined_v14" src="https://github.com/user-attachments/assets/ec5a2fd7-5c90-46c8-a704-286436a2d351" />
 
 
-SubCellSeg is one 3D segmentation model for many subcellular structures. Most
-3D segmentation is still done one structure at a time, with a separate model or
-workflow per structure. SubCellSeg was instead trained jointly on 13
-endogenously tagged structures from the WTC-11 hiPSC Single-Cell Image Dataset:
-actin bundles, actomyosin bundles, adherens junctions, desmosomes, gap
-junctions, tight junctions, the ER (two markers), the Golgi, endosomes,
-mitochondria, nuclear pores and nuclear speckles. It is never told which
-structure it is looking at. In the paper this single model reached a mean Dice
-of 0.909 on the 13 structures and beat each of the 13 specialist models trained
-on one structure (mean 0.773). Give it a z-stack of a tagged structure, get back
-a 3D mask.
+SubCellSeg is a single 3D segmentation model for subcellular structures in
+fluorescence microscopy. It was trained jointly on 13 endogenously tagged
+structures from the WTC-11 hiPSC Single-Cell Image Dataset (actin bundles,
+actomyosin bundles, adherens junctions, desmosomes, gap junctions, tight
+junctions, the ER via two markers, the Golgi, endosomes, mitochondria, nuclear
+pores and nuclear speckles) and receives no information about which structure
+is in the image. The usual approach is one model or workflow per structure. In
+the paper the single model reached a mean Dice of 0.909 on the 13 structures,
+against 0.773 for 13 specialist models trained on one structure each, and was
+better on every structure. The input is a z-stack of the tagged channel, the
+output a binary 3D mask.
 
-You can use it in three ways:
-
-- **Segment your images** with the pretrained model. One command.
-- **Fine-tune** it on your own images and masks when the pretrained model is
-  not accurate enough for your structure or microscope.
-- **Build on it** from Python, napari or Fiji.
-
-You do not need programming experience for the first two.
+The pretrained model can be run directly on new images, fine-tuned on your own
+images and masks when its output is not good enough, or called from Python,
+napari or Fiji. The first two need no programming.
 
 <!-- RELEASE TODO: add a figure (raw image next to SubCellSeg mask) and the paper reference here. -->
 
@@ -39,27 +34,29 @@ You do not need programming experience for the first two.
 
 ## What to expect
 
-The training images are live WTC-11 hiPS cells on a spinning-disk confocal at
-100x (voxels 0.108 x 0.108 x 0.29 µm), one mEGFP-tagged protein per image. In
-the paper the model also worked without any retraining on images from other
-microscopes (Airyscan, a second spinning disk), at 20x to 100x, on
-drug-treated cells where mitochondria fragmented or the Golgi dispersed, on
-structures it had never seen (PCNA foci, nucleoli, microtubules), and on
-sarcomeres in iPSC-derived cardiomyocytes. So try it as is first.
+The training images are live WTC-11 hiPS cells imaged on a spinning-disk
+confocal at 100x, voxel size 0.108 x 0.108 x 0.29 µm, one mEGFP-tagged protein
+per image. The paper also tested the model, without retraining, on images from
+an Airyscan and from a second spinning-disk microscope, at 20x to 100x, on
+drug-treated cells (fragmented mitochondria, dispersed Golgi), on structures
+that were not in the training set (PCNA foci, nucleoli, microtubules) and on
+sarcomeres in iPSC-derived cardiomyocytes, with usable results in each case.
+It is worth running the pretrained model on your images before planning any
+fine-tuning.
 
-Where it does not work: signals defined by texture rather than by objects with
-edges. EZH2, a diffuse chromatin-associated signal, gave only sparse
-detections. It cannot recover detail that the optics did not resolve. And the
-mask is semantic, not instance: to count objects, split the mask afterwards
-with connected components or a watershed.
+The model has limits. It segments objects with edges; a diffuse signal such as
+EZH2, which fills the nucleus without distinct objects, gave only sparse
+detections. It cannot recover detail that the optics did not resolve. The
+output is a semantic mask, not instances, so counting objects needs a further
+step such as connected components or a watershed.
 
-When to fine-tune: when your mask convention differs from what the model
-learned. The clearest case in the paper is the nuclear envelope via lamin B1.
-The model segments it as a thin shell, but a nuclear mask needs the filled
-nucleus, so Dice out of the box was 0.31. Fine-tuning on 10% of the labelled
-images (16 z-stacks) gave 0.94, better than training a new model from scratch
-on all 160. Lysosomes via LAMP-1 went from 0.73 to 0.93 the same way. A few
-dozen annotated stacks is usually enough.
+Fine-tuning is mostly needed when your mask convention differs from what the
+model learned. The example from the paper is the nuclear envelope via lamin
+B1: the model segments the envelope as a thin shell, whereas a nuclear mask is
+the filled nucleus, and Dice without fine-tuning was 0.31. Fine-tuning on 10%
+of the labelled images, 16 z-stacks, gave 0.94, which is better than a model
+trained from scratch on all 160. Lysosomes via LAMP-1 went from 0.73 to 0.93
+in the same way.
 
 ## 1. Install
 
@@ -198,42 +195,40 @@ and matplotlib). Add your own machine as a new row in the tables above.
 This code is being actively developed. Please see
 [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute.
 
-- Suraj Mishra (`smishra3`) maintains the package, triages issues and pull
-  requests and handles security reports ([SECURITY.md](SECURITY.md)). Ashwin
-  Samudre (`kiryteo`) and Jessica Yu (`jessicasyu`) review pull requests.
-- Expect a first response to an issue within two weeks. Wrong segmentation
-  output and installation problems come first; feature requests are discussed
-  in the issue before any work starts.
-- Releases are tagged `vX.Y.Z` from `main` when there is a user-visible change
-  (see [CHANGELOG.md](CHANGELOG.md)). Model weights have their own
-  `weights-vN` tags and are never replaced in place.
-- Planned: the napari and Fiji plugins, video tutorials, the items marked
-  RELEASE TODO in the docs, and importing the paper's benchmark and figure
-  code into this repository.
-- After the paper is published, active development will slow down and this
-  section will say so. Bug fixes and security updates will continue.
+Suraj Mishra (`smishra3`) maintains the package, triages issues and pull
+requests, and handles security reports ([SECURITY.md](SECURITY.md)). Ashwin
+Samudre (`kiryteo`) and Jessica Yu (`jessicasyu`) review pull requests. Issues
+normally get a first response within two weeks. Wrong segmentation output and
+installation problems are handled before feature requests, which are discussed
+in the issue first.
+
+Releases are tagged `vX.Y.Z` from `main` when there is a user-visible change
+(see [CHANGELOG.md](CHANGELOG.md)). Model weights have their own `weights-vN`
+tags and are never replaced in place. Still to come are the napari and Fiji
+plugins, the video tutorials, the items marked RELEASE TODO in the docs, and
+the paper's benchmark and figure code. Once the paper is published, development
+will slow down and this section will be updated; bug fixes and security
+updates will continue.
 
 ## How this code was developed
 
-The model, its training recipe and all experiments in the paper were developed
-by the authors from 2024 to 2026 with [cyto-dl](https://github.com/AllenCell/cyto-dl).
-That development history lives in the MegaSeg repository and is being imported
-here. This package re-implements inference and fine-tuning without cyto-dl so
-that it installs on its own; the pretrained weights are the paper's cyto-dl
-checkpoint, converted with `tools/export_weights.py`.
+The model, the training recipe and the experiments in the paper were developed
+from 2024 to 2026 with [cyto-dl](https://github.com/AllenCell/cyto-dl). That
+history is in the MegaSeg repository and is being imported here. This package
+re-implements inference and fine-tuning without cyto-dl so that it installs on
+its own. The pretrained weights are the paper's cyto-dl checkpoint (DynUNet,
+epoch 650), converted with `tools/export_weights.py`; every tensor is
+identical. On 39 test images, 3 per structure, the package reproduced the
+paper's per-image Dice to within 0.0003, and where cyto-dl's probability maps
+were still available (desmosomes and endosomes) the masks differed in fewer
+than one voxel per million.
 
 The package code and documentation were drafted with AI assistance (Claude
-Code) and reviewed, tested and edited by the authors, following the Allen
-Institute's guidelines for AI coding agents. Commits that contain AI-generated
-code carry an `Assisted-by:` trailer naming the tool and model.
+Code). The authors reviewed, ran and edited everything, following the Allen
+Institute's guidelines for AI coding agents, and commits that contain
+AI-generated code carry an `Assisted-by:` trailer naming the tool and model.
 
-The released weights are the MegaSeg DynUNet checkpoint (epoch 650) tensor for
-tensor. On 39 test images (3 per structure) this package reproduced the paper's
-per-image Dice to within 0.0003, and on the images for which the cyto-dl
-probability maps are still on disk (desmosomes, endosomes) the masks agree with
-cyto-dl's on 100.0000% of voxels.
-
-<!-- RELEASE TODO (done 2026-11-10): masks verified against the cyto-dl predictions; see the paragraph above. -->
+<!-- RELEASE TODO (done 2026-11-10): masks verified against the cyto-dl predictions; see above. -->
 
 ## Getting help
 
