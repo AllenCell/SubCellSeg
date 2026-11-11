@@ -32,14 +32,40 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _report(blocks: int, block_size: int, total: int) -> None:
-    done = blocks * block_size / 2**20
-    if total > 0:
-        pct = min(100, int(done * 2**20 * 100 / total))
-        sys.stderr.write(f"\r  {done:.0f} / {total / 2**20:.0f} MB ({pct}%)")
-    else:
-        sys.stderr.write(f"\r  {done:.0f} MB")
-    sys.stderr.flush()
+class _Progress:
+    """``urlretrieve`` reporthook that writes only when the shown value changes.
+
+    urlretrieve calls the hook for every 8 KB block (about 8,000 times for the
+    weights). In a terminal the line is redrawn in place when the whole percentage
+    (or, with no known size, the whole MB) changes. When stderr is not a terminal
+    (CI, log files, notebooks) one line is written per 10%, so logs stay short.
+    """
+
+    def __init__(self) -> None:
+        self.tty = sys.stderr.isatty()
+        self.last: int | None = None
+
+    def __call__(self, blocks: int, block_size: int, total: int) -> None:
+        done = blocks * block_size
+        if total > 0:
+            done = min(done, total)
+            pct = done * 100 // total
+            step = pct if self.tty else pct // 10 * 10
+            text = f"{done / 2**20:.0f} / {total / 2**20:.0f} MB ({step}%)"
+        elif self.tty:
+            step = done // 2**20
+            text = f"{step} MB"
+        else:
+            return
+        if step == self.last:
+            return
+        self.last = step
+        sys.stderr.write(f"\r  {text}" if self.tty else f"  {text}\n")
+        sys.stderr.flush()
+
+    def finish(self) -> None:
+        if self.tty and self.last is not None:
+            sys.stderr.write("\n")
 
 
 def fetch_pretrained() -> Path:
@@ -59,16 +85,17 @@ def fetch_pretrained() -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     partial = path.with_name(path.name + ".part")
     print(f"Downloading SubCellSeg weights to {path}", file=sys.stderr)
+    progress = _Progress()
     try:
         try:
-            urllib.request.urlretrieve(url, partial, reporthook=_report)
+            urllib.request.urlretrieve(url, partial, reporthook=progress)
         except OSError as err:  # no network, blocked download, missing file
             raise RuntimeError(
                 f"Could not download the pretrained weights from {url} ({err}).\n"
                 f"Download that file in a web browser and save it as {path}, "
                 "or pass a weights file with --checkpoint."
             ) from None
-        sys.stderr.write("\n")
+        progress.finish()
         if WEIGHTS_SHA256 and not os.environ.get("SUBCELLSEG_WEIGHTS_URL"):
             found = sha256(partial)
             if found != WEIGHTS_SHA256:
