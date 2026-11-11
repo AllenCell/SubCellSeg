@@ -2,6 +2,7 @@
 they need neither a GPU nor the pretrained weights."""
 
 import csv
+import sys
 
 import numpy as np
 import pytest
@@ -333,3 +334,23 @@ def test_weights_download_is_verified_and_cached(tmp_path, monkeypatch):
     path.unlink()
     with pytest.raises(RuntimeError, match="Could not download"):
         weights.fetch_pretrained()
+
+
+@pytest.mark.parametrize("tty", [False, True])
+def test_download_progress_stays_short(tty, monkeypatch, capsys):
+    from subcellseg import weights
+
+    monkeypatch.setattr(sys.stderr, "isatty", lambda: tty)
+    progress = weights._Progress()
+    total, block = 64 * 2**20, 8192  # the real weights: about 8,000 hook calls
+    for blocks in range(total // block + 2):
+        progress(blocks, block, total)
+    progress.finish()
+    err = capsys.readouterr().err
+    assert "(100%)" in err
+    if tty:
+        assert err.count("\r") == 101  # one redraw per whole percent
+    else:
+        assert "\r" not in err
+        lines = err.splitlines()
+        assert [line.rsplit("(", 1)[1] for line in lines] == [f"{p}%)" for p in range(0, 101, 10)]
