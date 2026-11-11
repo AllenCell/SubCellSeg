@@ -5,6 +5,17 @@ All notable changes to SubCellSeg are listed here. The format follows
 
 ## Unreleased
 
+### Changed
+- `predict` defaults now match the paper: 30% window overlap and uniform
+  (`constant`) blending, instead of 50% and Gaussian. Pass
+  `--overlap 0.5 --blend gaussian` for the previous behaviour. A voxel is
+  foreground when its probability is at least the threshold (was: above), so
+  `_seg.tif` is exactly `_prob.tif >= 128`.
+- `train` and `finetune` defaults now match the paper: batch size 32 (was 8),
+  at most 1000 epochs (was 700), 20% of the images held out for validation
+  (was 10%). Fine-tuning uses a learning rate of 5e-5 and stops after 50
+  epochs without improvement; training from scratch keeps 1e-4 and 100.
+
 ### Added
 - Benchmarks section in the README and `tools/benchmark/` scripts.
 - Contributing guide, code of conduct, security policy, citation file,

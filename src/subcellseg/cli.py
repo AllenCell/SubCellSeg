@@ -38,7 +38,7 @@ def _add_predict(sub) -> None:
         "--threshold",
         type=float,
         default=0.5,
-        help="Probability above which a voxel is foreground (default: 0.5).",
+        help="Probability at or above which a voxel is foreground (default: 0.5).",
     )
     p.add_argument(
         "--save-prob",
@@ -47,13 +47,17 @@ def _add_predict(sub) -> None:
     )
     p.add_argument("--device", default="auto", help="auto, cpu, cuda, cuda:1, ... (default: auto).")
     p.add_argument(
-        "--overlap", type=float, default=0.5, help="Sliding-window overlap (default: 0.5)."
+        "--overlap",
+        type=float,
+        default=0.3,
+        help="Fraction by which neighbouring windows overlap (default: 0.3, as in the paper).",
     )
     p.add_argument(
         "--blend",
         choices=["gaussian", "constant"],
-        default="gaussian",
-        help="How overlapping windows are combined (default: gaussian).",
+        default="constant",
+        help="How overlapping windows are combined: constant averages them uniformly "
+        "(default, as in the paper), gaussian favours the centre of each window.",
     )
     p.add_argument(
         "--patch-size",
@@ -122,21 +126,21 @@ def _add_train(sub, name: str, finetune: bool) -> None:
     p.add_argument(
         "--val-fraction",
         type=float,
-        default=0.1,
-        help="Fraction held out for validation without --val-csv (default: 0.1).",
+        default=0.2,
+        help="Fraction held out for validation without --val-csv (default: 0.2).",
     )
-    p.add_argument("--epochs", type=int, default=700, help="Maximum epochs (default: 700).")
+    p.add_argument("--epochs", type=int, default=1000, help="Maximum epochs (default: 1000).")
     p.add_argument(
         "--patience",
         type=int,
-        default=100,
-        help="Stop after this many epochs without improvement (default: 100).",
+        help="Stop after this many epochs without improvement "
+        "(default: 50 when fine-tuning, 100 when training from scratch).",
     )
     p.add_argument(
         "--batch-size",
         type=int,
-        default=8,
-        help="Patches per step; lower it if the GPU runs out of memory (default: 8).",
+        default=32,
+        help="Patches per step; lower it if the GPU runs out of memory (default: 32).",
     )
     p.add_argument(
         "--patches-per-image",
@@ -152,7 +156,11 @@ def _add_train(sub, name: str, finetune: bool) -> None:
         metavar=("Z", "Y", "X"),
         help="Training patch size (default: 32 128 128).",
     )
-    p.add_argument("--lr", type=float, default=1e-4, help="Learning rate (default: 1e-4).")
+    p.add_argument(
+        "--lr",
+        type=float,
+        help="Learning rate (default: 5e-5 when fine-tuning, 1e-4 when training from scratch).",
+    )
     p.add_argument(
         "--num-workers", type=int, default=4, help="Data loading processes (default: 4)."
     )

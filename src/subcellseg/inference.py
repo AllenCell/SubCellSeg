@@ -71,8 +71,8 @@ class SubCellSeg:
         volume: np.ndarray,
         *,
         patch_size: Sequence[int] = PATCH_SIZE,
-        overlap: float = 0.5,
-        blend: str = "gaussian",
+        overlap: float = 0.3,
+        blend: str = "constant",
         batch_size: int = 4,
         progress: bool = False,
     ) -> np.ndarray:
@@ -88,7 +88,11 @@ class SubCellSeg:
         overlap
             Fraction by which neighbouring windows overlap.
         blend
-            How overlapping windows are combined: "gaussian" or "constant".
+            How overlapping windows are combined: "constant" averages them
+            uniformly, "gaussian" weights the centre of each window more.
+
+        The defaults (30% overlap, constant blending) are the settings behind
+        the results in the paper.
         batch_size
             Number of windows run through the network at once.
         """
@@ -123,13 +127,14 @@ class SubCellSeg:
     def segment(self, volume: np.ndarray, threshold: float = 0.5, **kwargs) -> np.ndarray:
         """Binary mask of a (Z, Y, X) volume: uint8, 255 inside the structure.
 
-        Extra keyword arguments are passed to :meth:`predict_proba`.
+        A voxel is inside the structure when its probability is at least
+        ``threshold``. Extra keyword arguments are passed to :meth:`predict_proba`.
         """
         return to_mask(self.predict_proba(volume, **kwargs), threshold)
 
 
 def to_mask(probability: np.ndarray, threshold: float = 0.5) -> np.ndarray:
-    return (probability > threshold).astype(np.uint8) * 255
+    return (probability >= threshold).astype(np.uint8) * 255
 
 
 def predict(
@@ -162,7 +167,8 @@ def predict(
     channel
         Channel to segment, as an index or a channel name.
     threshold
-        Probability above which a voxel is foreground.
+        Probability at or above which a voxel is foreground. With the default
+        of 0.5 the mask equals the saved probability map thresholded at 128.
     save_probability
         Also write the probability map as ``name_prob.tif`` (uint8, 0-255).
     device
